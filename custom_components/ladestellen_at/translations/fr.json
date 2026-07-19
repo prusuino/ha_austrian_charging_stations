@@ -1,0 +1,82 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Bornes de recharge Autriche (ladestellen.at)",
+        "description": "Choisissez ce qu'il faut configurer : un aperçu filtrable en direct des bornes les plus proches dans un rayon, ou un point de charge/site favori unique, suivi indépendamment de tout emplacement.",
+        "data": {
+          "mode": "Mode"
+        }
+      },
+      "radius": {
+        "title": "Aperçu par rayon",
+        "description": "Configure le suivi des bornes de recharge autour d'un emplacement, à partir du répertoire officiel autrichien ladestellen.at (E-Control). Une clé API personnelle gratuite est nécessaire : inscription sur https://admin.ladestellen.at/#/api/registrieren avec homeassistant.local comme domaine autorisé — la clé arrive par e-mail. La latitude/longitude correspondent par défaut à l'emplacement de votre domicile Home Assistant. Ajoutez à nouveau l'intégration pour un autre rayon ou emplacement. Les filtres (puissance minimale, type de connecteur, statut, exploitant) se règlent ensuite en direct via des entités number/select. Remarque : l'API source renvoie les ~100 bornes les plus proches — les zones très denses sont limitées aux 100 sites les plus proches, quel que soit le rayon.",
+        "data": {
+          "api_key": "Clé API (de admin.ladestellen.at)",
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "radius_km": "Rayon (km)"
+        }
+      },
+      "favorite": {
+        "title": "Point de charge favori",
+        "description": "Saisissez directement l'EvseID du point de charge (indiqué sur la borne, p. ex. AT*DAE*E0002115), ou laissez le champ vide et cherchez près d'un emplacement — une liste de sélection s'affichera à l'écran suivant. Ajoutez à nouveau l'intégration pour un autre favori.",
+        "data": {
+          "api_key": "Clé API (de admin.ladestellen.at)",
+          "station_id": "EvseID du point de charge (facultatif — laisser vide pour chercher)",
+          "latitude": "Latitude (utilisée seulement si l'EvseID est vide)",
+          "longitude": "Longitude (utilisée seulement si l'EvseID est vide)",
+          "radius_km": "Rayon de recherche (km — utilisé seulement si l'EvseID est vide)",
+          "min_power_kw": "Puissance minimale (kW, utilisée seulement si l'EvseID est vide)",
+          "plug_type": "Type de connecteur (utilisé seulement si l'EvseID est vide)"
+        }
+      },
+      "favorite_pick": {
+        "title": "Choisir le point de charge favori",
+        "description": "{count} points de charge trouvés à proximité, les plus proches en premier. Les entrées marquées 📍 sont des sites entiers (tous leurs points de charge regroupés en un favori) plutôt qu'un point de charge unique.",
+        "data": {
+          "station_id": "Point de charge",
+          "favorite_name": "Nom personnalisé (facultatif)"
+        }
+      },
+      "favorite_scope": {
+        "title": "Un point de charge ou tout le site ?",
+        "description": "{evse_id} est l'un des {count} points de charge du site {site}. Épingler uniquement ce point de charge, ou tout le site avec tous ses points de charge ?",
+        "data": {
+          "favorite_scope": "Portée",
+          "favorite_name": "Nom personnalisé (facultatif)"
+        }
+      },
+      "favorite_confirm": {
+        "title": "Confirmer le favori",
+        "description": "Trouvé : {what}. Vous pouvez lui donner un nom personnalisé avant sa création.",
+        "data": {
+          "favorite_name": "Nom personnalisé (facultatif)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Cette combinaison emplacement/rayon ou ce point de charge est déjà configuré."
+    },
+    "error": {
+      "cannot_connect": "ladestellen.at n'a pas pu être atteint.",
+      "invalid_auth": "La clé API a été refusée. Vérifiez la clé et qu'elle a bien été enregistrée pour le domaine homeassistant.local.",
+      "station_not_found": "Aucun point de charge trouvé avec cet EvseID.",
+      "no_stations_found": "Aucun point de charge trouvé dans ce rayon."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Capteurs par type de connecteur",
+        "description": "Chaque type de connecteur sélectionné reçoit son propre capteur comptant les points de charge disponibles de ce type dans ce rayon. Ces capteurs respectent les filtres puissance minimale et exploitant, mais ignorent les filtres en direct type de connecteur et statut — ils gardent leur signification pendant que la carte est filtrée.",
+        "data": {
+          "plug_type_sensors": "Types de connecteur avec capteur dédié"
+        }
+      }
+    },
+    "abort": {
+      "no_options": "Seules les entrées par rayon ont des options. Les favoris sont configurés lors de leur ajout."
+    }
+  }
+}

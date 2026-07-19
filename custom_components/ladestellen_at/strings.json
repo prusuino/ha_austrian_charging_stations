@@ -1,0 +1,82 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Charging Stations Austria (ladestellen.at)",
+        "description": "Choose what to set up: a live-filterable overview of the nearest stations within a radius, or a single favorite charge point/site tracked independently of any location.",
+        "data": {
+          "mode": "Mode"
+        }
+      },
+      "radius": {
+        "title": "Radius overview",
+        "description": "Sets up charging station tracking around a location, sourced from the official Austrian charging point directory ladestellen.at (E-Control). You need a free personal API key: register at https://admin.ladestellen.at/#/api/registrieren and enter `homeassistant.local` as the authorized domain — the key arrives by e-mail. Latitude/longitude default to your Home Assistant home location. Add the integration again for a different radius or location. Filters (minimum power, plug type, status, operator) are adjusted afterwards live via number/select entities. Note: the source API returns the ~100 nearest stations, so very dense areas are capped at the 100 nearest sites regardless of the radius.",
+        "data": {
+          "api_key": "API key (from admin.ladestellen.at)",
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "radius_km": "Radius (km)"
+        }
+      },
+      "favorite": {
+        "title": "Favorite charge point",
+        "description": "Enter the charge point's EvseID directly (printed on the charger, e.g. AT*DAE*E0002115), or leave it empty and search near a location instead — you'll get a list to pick from on the next screen. Add the integration again for another favorite.",
+        "data": {
+          "api_key": "API key (from admin.ladestellen.at)",
+          "station_id": "Charge point EvseID (optional — leave empty to search instead)",
+          "latitude": "Latitude (used only if EvseID is empty)",
+          "longitude": "Longitude (used only if EvseID is empty)",
+          "radius_km": "Search radius (km — used only if EvseID is empty)",
+          "min_power_kw": "Minimum power (kW, used only if EvseID is empty)",
+          "plug_type": "Plug type (used only if EvseID is empty)"
+        }
+      },
+      "favorite_pick": {
+        "title": "Pick your favorite charge point",
+        "description": "{count} charge points found nearby, closest first. Entries marked with 📍 are whole sites (all charge points there combined into one favorite) instead of a single charge point.",
+        "data": {
+          "station_id": "Charge point",
+          "favorite_name": "Custom name (optional)"
+        }
+      },
+      "favorite_scope": {
+        "title": "One charge point or the whole site?",
+        "description": "{evse_id} is one of {count} charge points at {site}. Pin only this charge point, or the whole site with all its charge points?",
+        "data": {
+          "favorite_scope": "Scope",
+          "favorite_name": "Custom name (optional)"
+        }
+      },
+      "favorite_confirm": {
+        "title": "Confirm favorite",
+        "description": "Found: {what}. You can give it a custom name before it is created.",
+        "data": {
+          "favorite_name": "Custom name (optional)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This location/radius or charge point is already configured."
+    },
+    "error": {
+      "cannot_connect": "ladestellen.at could not be reached.",
+      "invalid_auth": "The API key was rejected. Check the key, and make sure it was registered for the domain homeassistant.local.",
+      "station_not_found": "No charge point with this EvseID was found.",
+      "no_stations_found": "No charge points found within this radius."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Per-plug-type sensors",
+        "description": "Each selected plug type gets its own sensor counting the available charge points of that type within this radius. These sensors respect the minimum-power and operator filters but ignore the live plug-type and status filters, so they keep their meaning while the map is being filtered.",
+        "data": {
+          "plug_type_sensors": "Plug types with a dedicated sensor"
+        }
+      }
+    },
+    "abort": {
+      "no_options": "Only radius entries have options. Favorites are configured when they are added."
+    }
+  }
+}
