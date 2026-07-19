@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1 — 2026-07-19
+
+- New: sites and charge points whose operator declares **renewable energy** show a dark-green leaf badge in the bundled card's header, next to the availability badge. For a whole site the badge appears only when no charge point explicitly reports otherwise. The per-charge-point flag is also part of the overview sensor's `connectors` attribute (`renewable`).
+
 ## 1.1.0 — 2026-07-19
 
 - New: **ad-hoc price sensors** — every favorite charge point gets a dedicated price sensor (`..._price_ct_kwh`, in cents per kWh; 0 for explicitly free chargers), for single favorites and per charge point at favorite sites, listed on the auto-generated dashboard cards below the charging power.

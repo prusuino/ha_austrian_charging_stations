@@ -638,6 +638,7 @@ class FavoriteLocationSensor(CoordinatorEntity[FavoriteLocationCoordinator], Sen
                 "plug_types": c.get("plugs"),
                 "power_kw": c.get("power_kw"),
                 "price_cent_kwh": c.get("price_cent_kwh"),
+                "renewable": c.get("green_energy"),
             }
             # Sorted by EvseID so the card's tile order/numbering matches the
             # per-connector sensors ("Charge Point n"), which are numbered by

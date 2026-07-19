@@ -230,6 +230,15 @@ class AustrianChargingStationsCard extends HTMLElement {
 
     const attrs = stateObj.attributes;
     const isSite = Array.isArray(attrs.connectors);
+    // Renewable-energy badge: shown when the operator declares green power —
+    // for a site only when no connector explicitly says otherwise.
+    let renewable;
+    if (isSite) {
+      const flags = attrs.connectors.map((c) => c.renewable);
+      renewable = flags.some((f) => f === true) && !flags.some((f) => f === false);
+    } else {
+      renewable = attrs.green_energy === true;
+    }
     const title =
       this._config.title || attrs.friendly_name || this._config.entity;
     const addressParts = [
@@ -337,6 +346,11 @@ class AustrianChargingStationsCard extends HTMLElement {
           background: var(--secondary-background-color, rgba(127,127,127,.15));
           color: var(--primary-text-color);
         }
+        .badge.eco {
+          background: #1B5E20;
+          padding: 2px 8px;
+          display: flex; align-items: center;
+        }
         .badge.alert {
           background: var(--disabled-text-color, #757575);
           color: #fff;
@@ -377,6 +391,7 @@ class AustrianChargingStationsCard extends HTMLElement {
         <div class="wrap">
           <div class="head">
             <div class="title">${this._escape(title)}</div>
+            ${renewable ? `<div class="badge eco" title="Renewable energy"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="#fff" d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/></svg></div>` : ""}
             ${badge ? `<div class="badge${badgeClass ? ` ${badgeClass}` : ""}">${this._escape(badge)}</div>` : ""}
           </div>
           <div class="subhead">
