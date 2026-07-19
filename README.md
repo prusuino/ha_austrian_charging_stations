@@ -2,6 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-%E2%98%95-ffdd00)](https://www.buymeacoffee.com/prusuino)
 
 A Home Assistant custom integration that shows real-time availability of public EV charging stations in Austria, sourced from the official national charging point directory **ladestellen.at** (E-Control).
 
