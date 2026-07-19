@@ -10,7 +10,7 @@
       },
       "radius": {
         "title": "Umkreis-Übersicht",
-        "description": "Richtet die Ladestations-Verfolgung rund um einen Standort ein, basierend auf dem offiziellen österreichischen Ladestellenverzeichnis ladestellen.at (E-Control). Du brauchst einen kostenlosen persönlichen API-Key: Registrierung unter https://admin.ladestellen.at/#/api/registrieren mit homeassistant.local als berechtigter Domain — der Key kommt per E-Mail. Breiten-/Längengrad sind standardmässig der Home-Assistant-Heimatstandort. Integration erneut hinzufügen für einen anderen Radius oder Standort. Filter (Mindestleistung, Steckertyp, Status, Betreiber) werden danach live über number-/select-Entitäten eingestellt. Hinweis: Die Quell-API liefert die ~100 nächstgelegenen Stationen — sehr dichte Gebiete sind unabhängig vom Radius auf die 100 nächsten Standorte begrenzt.",
+        "description": "Richtet die Ladestations-Verfolgung rund um einen Standort ein, basierend auf dem offiziellen österreichischen Ladestellenverzeichnis ladestellen.at (E-Control). Du brauchst einen kostenlosen persönlichen API-Key: Registrierung unter admin.ladestellen.at → API mit homeassistant.local als berechtigter Domain — der Key kommt per E-Mail. Breiten-/Längengrad sind standardmässig der Home-Assistant-Heimatstandort. Integration erneut hinzufügen für einen anderen Radius oder Standort. Filter (Mindestleistung, Steckertyp, Status, Betreiber) werden danach live über number-/select-Entitäten eingestellt. Hinweis: Die Quell-API liefert die ~100 nächstgelegenen Stationen — sehr dichte Gebiete sind unabhängig vom Radius auf die 100 nächsten Standorte begrenzt.",
         "data": {
           "api_key": "API-Key (von admin.ladestellen.at)",
           "latitude": "Breitengrad",

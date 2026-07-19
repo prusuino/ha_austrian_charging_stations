@@ -10,7 +10,7 @@
       },
       "radius": {
         "title": "Panoramica per raggio",
-        "description": "Configura il monitoraggio delle stazioni di ricarica attorno a una posizione, basato sul registro ufficiale austriaco ladestellen.at (E-Control). Serve una chiave API personale gratuita: registrazione su https://admin.ladestellen.at/#/api/registrieren con homeassistant.local come dominio autorizzato — la chiave arriva via e-mail. Latitudine/longitudine corrispondono per default alla posizione di casa di Home Assistant. Aggiungi di nuovo l'integrazione per un altro raggio o posizione. I filtri (potenza minima, tipo di connettore, stato, gestore) si regolano poi in tempo reale tramite entità number/select. Nota: l'API sorgente restituisce le ~100 stazioni più vicine — le aree molto dense sono limitate ai 100 siti più vicini, indipendentemente dal raggio.",
+        "description": "Configura il monitoraggio delle stazioni di ricarica attorno a una posizione, basato sul registro ufficiale austriaco ladestellen.at (E-Control). Serve una chiave API personale gratuita: registrazione su admin.ladestellen.at → API con homeassistant.local come dominio autorizzato — la chiave arriva via e-mail. Latitudine/longitudine corrispondono per default alla posizione di casa di Home Assistant. Aggiungi di nuovo l'integrazione per un altro raggio o posizione. I filtri (potenza minima, tipo di connettore, stato, gestore) si regolano poi in tempo reale tramite entità number/select. Nota: l'API sorgente restituisce le ~100 stazioni più vicine — le aree molto dense sono limitate ai 100 siti più vicini, indipendentemente dal raggio.",
         "data": {
           "api_key": "Chiave API (da admin.ladestellen.at)",
           "latitude": "Latitudine",

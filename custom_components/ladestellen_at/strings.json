@@ -10,7 +10,7 @@
       },
       "radius": {
         "title": "Radius overview",
-        "description": "Sets up charging station tracking around a location, sourced from the official Austrian charging point directory ladestellen.at (E-Control). You need a free personal API key: register at https://admin.ladestellen.at/#/api/registrieren and enter `homeassistant.local` as the authorized domain — the key arrives by e-mail. Latitude/longitude default to your Home Assistant home location. Add the integration again for a different radius or location. Filters (minimum power, plug type, status, operator) are adjusted afterwards live via number/select entities. Note: the source API returns the ~100 nearest stations, so very dense areas are capped at the 100 nearest sites regardless of the radius.",
+        "description": "Sets up charging station tracking around a location, sourced from the official Austrian charging point directory ladestellen.at (E-Control). You need a free personal API key: register at admin.ladestellen.at → API and enter `homeassistant.local` as the authorized domain — the key arrives by e-mail. Latitude/longitude default to your Home Assistant home location. Add the integration again for a different radius or location. Filters (minimum power, plug type, status, operator) are adjusted afterwards live via number/select entities. Note: the source API returns the ~100 nearest stations, so very dense areas are capped at the 100 nearest sites regardless of the radius.",
         "data": {
           "api_key": "API key (from admin.ladestellen.at)",
           "latitude": "Latitude",
