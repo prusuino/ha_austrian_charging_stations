@@ -359,14 +359,8 @@ class AustrianChargingStationsCard extends HTMLElement {
           background: var(--secondary-background-color, rgba(127,127,127,.15));
           color: var(--primary-text-color);
         }
-        .badge.acc-free {
-          background: var(--secondary-background-color, rgba(127,127,127,.15));
-          color: var(--primary-text-color);
-        }
-        .badge.acc-restricted {
-          background: var(--warning-color, #f9a825);
-          color: #000;
-        }
+        .badge.acc-free,
+        .badge.acc-restricted,
         .badge.acc-paying {
           background: #546e7a;
           color: #fff;
