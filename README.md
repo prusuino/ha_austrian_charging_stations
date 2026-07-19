@@ -52,11 +52,12 @@ The registry reports connector types in two coexisting vocabularies (legacy keys
 |---|---|---|
 | `sensor.at_charging_station_favorite_<name>` | Sensor | Current status (available / occupied / out of service). Attributes include the finer-grained raw registry status (`at_status`: AVAILABLE / CHARGING / RESERVED / BLOCKED / ...), the ad-hoc price (`price_cent_kwh`), and the operator's green-energy declaration. |
 | `sensor.at_charging_station_favorite_<name>_power_kw` | Sensor | Charging power (kW), as its own graphable sensor. |
+| `sensor.at_charging_station_favorite_<name>_price_ct_kwh` | Sensor | Ad-hoc price in cents per kWh (0 for explicitly free chargers). |
 | `sensor.at_charging_station_favorite_<name>_plug_type` | Sensor | Plug type(s) of the charge point. |
 | `sensor.at_charging_station_favorite_<name>_operator` | Sensor | The charge point's operator. |
 | `sensor.at_charging_station_favorite_<name>_station_id` | Sensor | The charge point's EvseID (diagnostic). |
 
-A pre-filled card listing all five is also added automatically to a "Favorites" view on the [automatic dashboard](#automatic-dashboard).
+A pre-filled card listing all six is also added automatically to a "Favorites" view on the [automatic dashboard](#automatic-dashboard).
 
 ### Favorite site
 
@@ -67,11 +68,12 @@ A pre-filled card listing all five is also added automatically to a "Favorites" 
 | `sensor.at_charging_station_favorite_location_<name>_status` | Sensor | Derived overall site status: available / occupied / **closed** (outside opening hours) / out of service. Localized state; raw `site_status` attribute for automations. |
 | `sensor.at_charging_station_favorite_location_<name>_connector_<n>_status` | Sensor | Current status of charge point `<n>` at the site. |
 | `sensor.at_charging_station_favorite_location_<name>_connector_<n>_power_kw` | Sensor | Charging power (kW) of charge point `<n>`. |
+| `sensor.at_charging_station_favorite_location_<name>_connector_<n>_price_ct_kwh` | Sensor | Ad-hoc price (cents per kWh) of charge point `<n>`. |
 | `sensor.at_charging_station_favorite_location_<name>_connector_<n>_plug_type` | Sensor | Plug type(s) of charge point `<n>`. |
 | `sensor.at_charging_station_favorite_location_<name>_connector_<n>_operator` | Sensor | Operator of charge point `<n>`. |
 | `sensor.at_charging_station_favorite_location_<name>_connector_<n>_station_id` | Sensor | The charge point's own EvseID (diagnostic). |
 
-One set of these five per charge point is created automatically. A pre-filled card listing all of them is also added automatically to a "Favorites" view on the [automatic dashboard](#automatic-dashboard).
+One set of these six per charge point is created automatically. A pre-filled card listing all of them is also added automatically to a "Favorites" view on the [automatic dashboard](#automatic-dashboard).
 
 Favorites (charge point or site) intentionally have no `geo_location` map marker — the radius overview already covers map display, so a favorite is tracked purely via its sensors, keeping the map free of clutter.
 

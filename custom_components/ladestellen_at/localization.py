@@ -194,6 +194,24 @@ STRINGS: dict[str, dict[str, str]] = {
         "fr": "{name} · {power:g}kW · {distance}km · {status}",
         "it": "{name} · {power:g}kW · {distance}km · {status}",
     },
+    "price_label": {
+        "de": "{price:g} ct/kWh",
+        "en": "{price:g} ct/kWh",
+        "fr": "{price:g} ct/kWh",
+        "it": "{price:g} ct/kWh",
+    },
+    "price_from_label": {
+        "de": "ab {price:g} ct/kWh",
+        "en": "from {price:g} ct/kWh",
+        "fr": "dès {price:g} ct/kWh",
+        "it": "da {price:g} ct/kWh",
+    },
+    "favorite_price_name": {
+        "de": "Preis",
+        "en": "Price",
+        "fr": "Prix",
+        "it": "Prezzo",
+    },
     "favorite_location_device_name": {
         "de": "Ladestandort {name}",
         "en": "Charging Site {name}",
@@ -332,16 +350,29 @@ def localized_site_status(status: str | None, hass: HomeAssistant) -> str:
     return t(key, hass)
 
 
+def _price_suffix(price_cent, hass: HomeAssistant, from_prefix: bool = False) -> str:
+    """' · 52.8 ct/kWh' (euro cents; or the localized 'from …' variant for
+    sites whose charge points have differing prices); empty when no price
+    is known."""
+    if not isinstance(price_cent, (int, float)) or price_cent <= 0:
+        return ""
+    key = "price_from_label" if from_prefix else "price_label"
+    return " · " + t(key, hass, price=round(price_cent, 1))
+
+
 def station_display_label(station: dict, hass: HomeAssistant) -> str:
     """One-line label for a station in the favorite-picker dropdown."""
     name = station.get("station_name") or station.get("city") or t("station_fallback_name", hass)
-    return t(
-        "favorite_pick_label",
-        hass,
-        name=name,
-        power=station.get("power_kw") or 0,
-        distance=station.get("distance_km"),
-        status=localized_status(station.get("status"), hass),
+    return (
+        t(
+            "favorite_pick_label",
+            hass,
+            name=name,
+            power=station.get("power_kw") or 0,
+            distance=station.get("distance_km"),
+            status=localized_status(station.get("status"), hass),
+        )
+        + _price_suffix(station.get("price_cent_kwh"), hass)
     )
 
 
@@ -349,10 +380,18 @@ def location_display_label(location: dict, hass: HomeAssistant) -> str:
     """One-line label for a whole physical site in the favorite-picker
     dropdown, listed alongside the individual per-connector options."""
     name = location.get("station_name") or location.get("city") or t("station_fallback_name", hass)
-    return t(
-        "favorite_location_pick_label",
-        hass,
-        name=name,
-        count=location.get("count_total", 0),
-        distance=location.get("distance_km"),
+    prices = {
+        c.get("price_cent_kwh")
+        for c in (location.get("connectors") or {}).values()
+        if isinstance(c.get("price_cent_kwh"), (int, float)) and c.get("price_cent_kwh") > 0
+    }
+    return (
+        t(
+            "favorite_location_pick_label",
+            hass,
+            name=name,
+            count=location.get("count_total", 0),
+            distance=location.get("distance_km"),
+        )
+        + _price_suffix(min(prices) if prices else None, hass, from_prefix=len(prices) > 1)
     )

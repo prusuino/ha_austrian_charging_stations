@@ -86,10 +86,11 @@ async def async_setup_entry(
         coordinator: FavoriteStationCoordinator = hass.data[DOMAIN][entry.entry_id]
         status_sensor = FavoriteStationSensor(hass, coordinator, entry)
         power_sensor = FavoriteStationPowerSensor(hass, coordinator, entry)
+        price_sensor = FavoriteStationPriceSensor(hass, coordinator, entry)
         plug_sensor = FavoriteStationPlugTypeSensor(hass, coordinator, entry)
         operator_sensor = FavoriteStationOperatorSensor(hass, coordinator, entry)
         id_sensor = FavoriteStationIdSensor(hass, coordinator, entry)
-        async_add_entities([status_sensor, power_sensor, plug_sensor, operator_sensor, id_sensor])
+        async_add_entities([status_sensor, power_sensor, price_sensor, plug_sensor, operator_sensor, id_sensor])
 
         site_name = _favorite_name(entry, coordinator.data or {})
         card = {
@@ -108,6 +109,7 @@ async def async_setup_entry(
                             "icon": "mdi:clock-outline",
                         },
                         {"entity": power_sensor.entity_id, "name": t("favorite_power_name", hass)},
+                        {"entity": price_sensor.entity_id, "name": t("favorite_price_name", hass)},
                         {"entity": plug_sensor.entity_id, "name": t("favorite_plug_type_name", hass)},
                         {"entity": operator_sensor.entity_id, "name": t("favorite_operator_name", hass)},
                         {"entity": id_sensor.entity_id, "name": t("favorite_station_id_name", hass)},
@@ -148,6 +150,9 @@ async def async_setup_entry(
                             hass, location_coordinator, entry, evse_id, index, site_slug
                         ),
                         FavoriteLocationConnectorPowerSensor(
+                            hass, location_coordinator, entry, evse_id, index, site_slug
+                        ),
+                        FavoriteLocationConnectorPriceSensor(
                             hass, location_coordinator, entry, evse_id, index, site_slug
                         ),
                         FavoriteLocationConnectorPlugTypeSensor(
@@ -297,10 +302,11 @@ def _build_location_card_entities(
         }
     )
     for index, evse_id in enumerate(sorted(known_connectors), start=1):
-        status_entity, power_entity, plug_entity, operator_entity, id_entity = known_connectors[evse_id]
+        status_entity, power_entity, price_entity, plug_entity, operator_entity, id_entity = known_connectors[evse_id]
         entities.append({"type": "section", "label": t("favorite_location_connector_prefix", hass, n=index)})
         entities.append({"entity": status_entity.entity_id, "name": t("favorite_status_name", hass)})
         entities.append({"entity": power_entity.entity_id, "name": t("favorite_power_name", hass)})
+        entities.append({"entity": price_entity.entity_id, "name": t("favorite_price_name", hass)})
         entities.append({"entity": plug_entity.entity_id, "name": t("favorite_plug_type_name", hass)})
         entities.append({"entity": operator_entity.entity_id, "name": t("favorite_operator_name", hass)})
         entities.append({"entity": id_entity.entity_id, "name": t("favorite_station_id_name", hass)})
@@ -485,6 +491,34 @@ class FavoriteStationPowerSensor(CoordinatorEntity[FavoriteStationCoordinator], 
     @property
     def native_value(self):
         return (self.coordinator.data or {}).get("power_kw")
+
+
+class FavoriteStationPriceSensor(CoordinatorEntity[FavoriteStationCoordinator], SensorEntity):
+    """Ad-hoc price (euro cents per kWh) reported by the operator for this
+    favorite charge point. 0 for explicitly free chargers; unknown when the
+    operator reports no price."""
+
+    _attr_has_entity_name = False
+    _attr_attribution = ATTRIBUTION
+    _attr_native_unit_of_measurement = "ct/kWh"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 1
+    _attr_icon = "mdi:cash"
+
+    def __init__(self, hass: HomeAssistant, coordinator: FavoriteStationCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        name = _favorite_name(entry, coordinator.data or {})
+        self._attr_name = t("favorite_price_name", hass)
+        self._attr_unique_id = f"{entry.entry_id}_price"
+        self._attr_device_info = device_info(hass, entry)
+        self.entity_id = f"sensor.at_charging_station_favorite_{slugify(name)}_price_ct_kwh"
+
+    @property
+    def native_value(self):
+        station = self.coordinator.data or {}
+        if station.get("free_of_charge"):
+            return 0
+        return station.get("price_cent_kwh")
 
 
 class FavoriteStationPlugTypeSensor(CoordinatorEntity[FavoriteStationCoordinator], SensorEntity):
@@ -798,6 +832,43 @@ class FavoriteLocationConnectorPowerSensor(CoordinatorEntity[FavoriteLocationCoo
     def native_value(self):
         c = (self.coordinator.data or {}).get("connectors", {}).get(self._evse_id) or {}
         return c.get("power_kw")
+
+
+class FavoriteLocationConnectorPriceSensor(CoordinatorEntity[FavoriteLocationCoordinator], SensorEntity):
+    """Ad-hoc price (euro cents per kWh) of one specific charge point at a
+    favorite site. 0 for explicitly free chargers; unknown when the operator
+    reports no price."""
+
+    _attr_has_entity_name = False
+    _attr_attribution = ATTRIBUTION
+    _attr_native_unit_of_measurement = "ct/kWh"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 1
+    _attr_icon = "mdi:cash"
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        coordinator: FavoriteLocationCoordinator,
+        entry: ConfigEntry,
+        evse_id: str,
+        index: int,
+        site_slug: str,
+    ) -> None:
+        super().__init__(coordinator)
+        self._evse_id = evse_id
+        prefix = t("favorite_location_connector_prefix", hass, n=index)
+        self._attr_name = f"{prefix} {t('favorite_price_name', hass)}"
+        self._attr_unique_id = f"{entry.entry_id}_{evse_id}_price"
+        self._attr_device_info = device_info(hass, entry)
+        self.entity_id = f"sensor.at_charging_station_favorite_location_{site_slug}_connector_{index}_price_ct_kwh"
+
+    @property
+    def native_value(self):
+        c = (self.coordinator.data or {}).get("connectors", {}).get(self._evse_id) or {}
+        if c.get("free_of_charge"):
+            return 0
+        return c.get("price_cent_kwh")
 
 
 class FavoriteLocationConnectorPlugTypeSensor(CoordinatorEntity[FavoriteLocationCoordinator], SensorEntity):

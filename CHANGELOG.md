@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0 — 2026-07-19
+
+- New: **ad-hoc price sensors** — every favorite charge point gets a dedicated price sensor (`..._price_ct_kwh`, in cents per kWh; 0 for explicitly free chargers), for single favorites and per charge point at favorite sites, listed on the auto-generated dashboard cards below the charging power.
+- New: the favorite search picker shows the **price next to the distance** — single charge points with their own price ("· 52.8 ct/kWh"), whole sites with the cheapest one ("· from 44 ct/kWh") when their charge points differ.
+
 ## 1.0.0 — 2026-07-19
 
 Initial release.
