@@ -85,6 +85,8 @@ The header shows the site name, its address, and the weekly opening hours with c
 
 It works for both favorite kinds: a whole site shows one box per charge point; a single favorite shows one box.
 
+![Favorite sites shown with the bundled card (status boxes per charge point) above the auto-generated entities list with per-plug-family availability, status, and opening hours](docs/card-example.png)
+
 The card registers itself automatically (no manual resource setup) and is used on the auto-generated "Favorites" dashboard view. It is also available in the card picker as **Austrian Charging Stations Card** for use anywhere else, with a visual editor for all options:
 
 ```yaml
@@ -103,7 +105,9 @@ Entity names, the device name, and the dropdown filter values adapt automaticall
 
 ## Automatic dashboard
 
-On first setup, the integration automatically creates a **"Charging Stations"** dashboard (title localized to your HA language) with a full-screen native Home Assistant Map card, already configured to display each station's status directly on its marker. This only happens once: if you later customize or delete that dashboard yourself, the integration won't touch or re-create it. Note that after deleting it, its sidebar entry disappears with the next restart (a Home Assistant limitation for integration-registered panels).
+On first setup, the integration automatically creates a **"Charging Stations AT"** dashboard (title localized to your HA language) with a full-screen native Home Assistant Map card, already configured to display each site's availability directly on its marker. This only happens once: if you later customize or delete that dashboard yourself, the integration won't touch or re-create it. Note that after deleting it, its sidebar entry disappears with the next restart (a Home Assistant limitation for integration-registered panels).
+
+![The auto-generated dashboard map: one marker per charging site, labeled with live availability](docs/map-example.png)
 
 Favoriting a charge point or a whole site adds a second view, **"Favorites"**, to that same dashboard with a pre-filled Entities card per favorite — feel free to edit or delete it, though it's kept in sync with the favorite's current charge points on every restart.
 
