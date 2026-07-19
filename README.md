@@ -83,7 +83,12 @@ All favorite entities refresh live (every 5 minutes), independent of any radius 
 
 The integration ships its own Lovelace card, `austrian-charging-stations-card`, showing colored per-connector status boxes — green for available, red for occupied, gray for out of service, blue while the site is closed (outside its opening hours), yellow when the operator reports no usable status — each box with the charge point's plug family, charging power, and status. Clicking a box opens the charge point's more-info dialog.
 
-The header shows the site name, its address, and the weekly opening hours with consecutive days collapsed ("Mon–Fri 08:00–20:00 · Sat 07:30–18:00", or "Open 24 h"). The badge in the corner shows live availability ("3/8 available" — green while at least one charge point is free, red when all are taken) and switches to "Closed" outside opening hours, "Closed today" on full-day closures, or "Out of service" when nothing at the site is in service.
+The header shows the site name, its address, and the weekly opening hours with consecutive days collapsed ("Mon–Fri 08:00–20:00 · Sat 07:30–18:00", or "Open 24 h"). Up to two uniform badges stack vertically in the corner:
+
+- **Availability** — "3/8 available" (green while at least one charge point is free, red when all are taken), switching to "Closed" outside opening hours, "Closed today" on full-day closures, or "Out of service" when nothing at the site is in service.
+- **Renewable energy** (dark green leaf) — shown when the operator declares green power; for a whole site only when no charge point explicitly reports otherwise. The per-charge-point flag is also part of the overview sensor's `connectors` attribute (`renewable`).
+
+Each badge can be hidden individually via the visual editor (`hidden_badges` in YAML).
 
 It works for both favorite kinds: a whole site shows one box per charge point; a single favorite shows one box.
 
@@ -97,6 +102,8 @@ entity: sensor.at_charging_station_favorite_location_<name>  # or a single favor
 title: My charging site  # optional
 plug_types:  # optional: show only these plug families (multi-select in the visual editor)
   - CCS
+hidden_badges:  # optional: hide individual header badges (availability / renewable)
+  - availability
 ```
 
 With a `plug_types` filter, boxes of other plug families are hidden and the availability badge counts only the visible charge points. The filter is purely visual — the favorite, its sensors, and the dashboard entities list keep covering the whole site.
