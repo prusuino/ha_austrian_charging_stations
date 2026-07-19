@@ -32,7 +32,7 @@ from .localization import t
 
 _LOGGER = logging.getLogger(__name__)
 
-DASHBOARD_URL_PATH = "ladestationen"
+DASHBOARD_URL_PATH = "ladestationen-at"
 DASHBOARD_ICON = "mdi:ev-station"
 FAVORITES_VIEW_PATH = "favoriten"
 # Legacy marker key (pre-1.6.5): a foreign key inside the card dict made

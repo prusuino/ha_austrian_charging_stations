@@ -323,7 +323,7 @@ class ChargingStationsFreeSensor(CoordinatorEntity[LadestellenAtCoordinator], Se
         self._attr_unique_id = f"{entry.entry_id}_free"
         self._attr_device_info = device_info(hass, entry)
         radius = entry.data.get(CONF_RADIUS_KM)
-        self.entity_id = f"sensor.at_at_charging_stations_available_{round(radius)}km"
+        self.entity_id = f"sensor.at_charging_stations_available_{round(radius)}km"
 
     @property
     def native_value(self):
@@ -373,7 +373,7 @@ class ChargingStationsPlugTypeFreeSensor(CoordinatorEntity[LadestellenAtCoordina
         self._attr_unique_id = f"{entry.entry_id}_free_{slug}"
         self._attr_device_info = device_info(hass, entry)
         radius = entry.data.get(CONF_RADIUS_KM)
-        self.entity_id = f"sensor.at_at_charging_stations_available_{round(radius)}km_{slug}"
+        self.entity_id = f"sensor.at_charging_stations_available_{round(radius)}km_{slug}"
 
     @property
     def native_value(self):
