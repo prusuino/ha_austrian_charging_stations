@@ -79,6 +79,18 @@ const EDITOR_LABELS = {
     fr: "Types de prises visibles (vide = tous)",
     it: "Tipi di presa visibili (vuoto = tutti)",
   },
+  hidden_badges: {
+    de: "Badges ausblenden (leer = alle anzeigen)",
+    en: "Hide badges (empty = show all)",
+    fr: "Masquer les badges (vide = tout afficher)",
+    it: "Nascondi badge (vuoto = mostra tutto)",
+  },
+};
+
+const BADGE_LABELS = {
+  availability: { de: "Frei-Badge", en: "Availability badge", fr: "Badge disponibilité", it: "Badge disponibilità" },
+  accessibility: { de: "Zugangs-Badge", en: "Accessibility badge", fr: "Badge accès", it: "Badge accesso" },
+  renewable: { de: "Grünstrom-Badge", en: "Renewable badge", fr: "Badge énergie verte", it: "Badge energia verde" },
 };
 
 // All plug-type values observed in the national data set — offered in the
@@ -116,6 +128,9 @@ class AustrianChargingStationsCardEditor extends HTMLElement {
         if (!Array.isArray(config.plug_types) || !config.plug_types.length) {
           delete config.plug_types;
         }
+        if (!Array.isArray(config.hidden_badges) || !config.hidden_badges.length) {
+          delete config.hidden_badges;
+        }
         this.dispatchEvent(
           new CustomEvent("config-changed", {
             detail: { config },
@@ -132,6 +147,7 @@ class AustrianChargingStationsCardEditor extends HTMLElement {
       entity: this._config.entity || "",
       title: this._config.title || "",
       plug_types: this._config.plug_types || [],
+      hidden_badges: this._config.hidden_badges || [],
     };
     // Offer only the plug types that actually exist at the selected site
     // (falling back to the full national list before an entity is picked).
@@ -160,6 +176,12 @@ class AustrianChargingStationsCardEditor extends HTMLElement {
         name: "plug_types",
         selector: {
           select: { multiple: true, mode: "dropdown", options: plugOptions },
+        },
+      },
+      {
+        name: "hidden_badges",
+        selector: {
+          select: { multiple: true, mode: "dropdown", options: [{ value: "availability", label: BADGE_LABELS.availability[lang] || BADGE_LABELS.availability.en }, { value: "renewable", label: BADGE_LABELS.renewable[lang] || BADGE_LABELS.renewable.en }] },
         },
       },
     ];
@@ -234,6 +256,7 @@ class AustrianChargingStationsCard extends HTMLElement {
     // for a site only when no connector explicitly says otherwise.
     // Accessibility badge: localized text from the sensor, color keyed off
     // the raw declaration (absent in sources without the field).
+    const hiddenBadges = new Set(this._config.hidden_badges || []);
     const accText = attrs.accessibility_text;
     const accClass =
       attrs.accessibility === "Restricted access"
@@ -411,9 +434,9 @@ class AustrianChargingStationsCard extends HTMLElement {
           <div class="head">
             <div class="title">${this._escape(title)}</div>
             <div class="badges">
-            ${badge ? `<div class="badge${badgeClass ? ` ${badgeClass}` : ""}">${this._escape(badge)}</div>` : ""}
-            ${accText ? `<div class="badge ${accClass}">${this._escape(accText)}</div>` : ""}
-            ${renewable ? `<div class="badge eco" title="Renewable energy"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="#fff" d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/></svg></div>` : ""}
+            ${badge && !hiddenBadges.has("availability") ? `<div class="badge${badgeClass ? ` ${badgeClass}` : ""}">${this._escape(badge)}</div>` : ""}
+            ${accText && !hiddenBadges.has("accessibility") ? `<div class="badge ${accClass}">${this._escape(accText)}</div>` : ""}
+            ${renewable && !hiddenBadges.has("renewable") ? `<div class="badge eco" title="Renewable energy"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="#fff" d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/></svg></div>` : ""}
             </div>
           </div>
           <div class="subhead">

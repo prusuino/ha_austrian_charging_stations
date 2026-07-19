@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.1.2 — 2026-07-19
+## 1.1.4 — 2026-07-19
 
-- New: the card's header badges now stack vertically at a uniform size.
+- New: the card's header badges now stack vertically at a uniform size. A new **hide badges** multi-select in the visual editor (`hidden_badges` in YAML) hides individual ones.
 - New: sites and charge points whose operator declares **renewable energy** show a dark-green leaf badge in the bundled card's header, next to the availability badge. For a whole site the badge appears only when no charge point explicitly reports otherwise. The per-charge-point flag is also part of the overview sensor's `connectors` attribute (`renewable`).
 
 ## 1.1.0 — 2026-07-19
