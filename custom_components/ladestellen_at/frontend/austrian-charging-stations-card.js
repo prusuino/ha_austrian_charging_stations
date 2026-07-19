@@ -232,6 +232,15 @@ class AustrianChargingStationsCard extends HTMLElement {
     const isSite = Array.isArray(attrs.connectors);
     // Renewable-energy badge: shown when the operator declares green power —
     // for a site only when no connector explicitly says otherwise.
+    // Accessibility badge: localized text from the sensor, color keyed off
+    // the raw declaration (absent in sources without the field).
+    const accText = attrs.accessibility_text;
+    const accClass =
+      attrs.accessibility === "Restricted access"
+        ? "acc-restricted"
+        : attrs.accessibility === "Paying publicly accessible"
+          ? "acc-paying"
+          : "acc-free";
     let renewable;
     if (isSite) {
       const flags = attrs.connectors.map((c) => c.renewable);
@@ -332,8 +341,12 @@ class AustrianChargingStationsCard extends HTMLElement {
       <style>
         .wrap { padding: 12px 16px 16px; }
         .head {
-          display: flex; align-items: baseline; justify-content: space-between;
+          display: flex; align-items: flex-start; justify-content: space-between;
           gap: 8px; margin-bottom: 2px;
+        }
+        .badges {
+          flex: none; display: flex; flex-direction: column;
+          gap: 4px; align-items: stretch; min-width: 84px;
         }
         .title {
           font-size: 1.15em; font-weight: 500;
@@ -341,15 +354,27 @@ class AustrianChargingStationsCard extends HTMLElement {
           overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
         .badge {
-          flex: none; font-size: 0.85em; font-weight: 500;
+          font-size: 0.85em; font-weight: 500; text-align: center;
           padding: 2px 10px; border-radius: 12px;
           background: var(--secondary-background-color, rgba(127,127,127,.15));
           color: var(--primary-text-color);
         }
+        .badge.acc-free {
+          background: var(--secondary-background-color, rgba(127,127,127,.15));
+          color: var(--primary-text-color);
+        }
+        .badge.acc-restricted {
+          background: var(--warning-color, #f9a825);
+          color: #000;
+        }
+        .badge.acc-paying {
+          background: #546e7a;
+          color: #fff;
+        }
         .badge.eco {
           background: #1B5E20;
-          padding: 2px 8px;
-          display: flex; align-items: center;
+          padding: 3px 8px;
+          display: flex; align-items: center; justify-content: center;
         }
         .badge.alert {
           background: var(--disabled-text-color, #757575);
@@ -391,8 +416,11 @@ class AustrianChargingStationsCard extends HTMLElement {
         <div class="wrap">
           <div class="head">
             <div class="title">${this._escape(title)}</div>
-            ${renewable ? `<div class="badge eco" title="Renewable energy"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="#fff" d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/></svg></div>` : ""}
+            <div class="badges">
             ${badge ? `<div class="badge${badgeClass ? ` ${badgeClass}` : ""}">${this._escape(badge)}</div>` : ""}
+            ${accText ? `<div class="badge ${accClass}">${this._escape(accText)}</div>` : ""}
+            ${renewable ? `<div class="badge eco" title="Renewable energy"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="#fff" d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/></svg></div>` : ""}
+            </div>
           </div>
           <div class="subhead">
             ${address ? `<div class="addr">${this._escape(address)}</div>` : ""}
