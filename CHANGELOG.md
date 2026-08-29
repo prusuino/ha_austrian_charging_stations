@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1 — 2026-08-29
+
+- **New: strategy options.** Keys under `strategy:` are now honoured — `map: false`, `title`, `max_columns`. Unknown keys are ignored, so a typo cannot break the dashboard.
+- **New: view strategy.** Next to the dashboard strategy the card file now also registers `ll-strategy-view-...`, so a single view of your own dashboard can be filled by the strategy (`views: - strategy: {type: custom:...}`) while every other view stays hand-editable. Until now the only way to change anything was *Take control*, which permanently stops the dashboard from following your config entries.
+- No changes to the integration itself; only the bundled card file and the README.
+
 ## 1.2.0 — 2026-08-29
 
 - **Changed: the integration no longer creates a dashboard or writes cards into your Lovelace configuration.** It previously created a "Charging Stations AT" dashboard on first setup, kept an entities card per favorite in sync with it, and registered its own Lovelace resource. Dashboards, cards and resources are the user's configuration, and an integration should not be writing into them — so all of that is gone.

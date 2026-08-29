@@ -512,7 +512,7 @@ window.customCards.push({
  * part changes — it identifies which revision a copy was taken from.
  * ===================================================================== */
 
-const CORE_VERSION = "1.0.1";
+const CORE_VERSION = "1.1.0";
 
 /* --- Registry access -------------------------------------------------
  * The registries are the only reliable way to find an integration's
@@ -625,52 +625,104 @@ function translator(strings, hass) {
  * gracefully when the integration is not set up, and hand the concrete
  * strategy a prepared context.
  */
-function defineDashboardStrategy(name, { domain, title, icon, build, strings, description }) {
-  class Strategy extends HTMLElement {
-    static async generate(config, hass) {
-      const t = translator(strings || {}, hass);
-      let registry;
-      try {
-        registry = await loadRegistry(hass);
-      } catch (err) {
-        // Registry unreachable: render a readable message rather than
-        // letting the dashboard fail with a blank screen.
-        return {
-          title: title,
-          views: [{ title: title, cards: [emptyNotice(`⚠️ ${err}`)] }],
-        };
-      }
-      const domainEntries = entriesOfDomain(registry.entities, domain);
-      if (!domainEntries.length) {
-        return {
-          title: title,
-          views: [
-            {
-              title: title,
-              icon,
-              cards: [emptyNotice(t("not_configured"))],
-            },
-          ],
-        };
-      }
-      const views = await build({
-        hass,
-        config,
-        t,
-        domain,
-        entities: domainEntries,
-        devices: registry.devices,
-        allEntities: registry.entities,
-        helpers: { heading, grid, tile, mapCard, emptyNotice, bySuffix, groupByDevice, deviceName },
-      });
-      return { title, views };
+
+/* Options a user may put under `strategy:` in the raw configuration editor.
+ * They are handled here in the core, so every integration supports the same
+ * set without shipping its own option code:
+ *
+ *   map: false        drop the full-screen map view
+ *   title: "..."      override the title
+ *   max_columns: 3    column count of the generated section views
+ *
+ * Unknown keys are ignored on purpose - a strategy config is free-form, and a
+ * typo should not take the dashboard down. */
+const applyViewOptions = (views, config) => {
+  const cfg = config || {};
+  let out = views;
+  if (cfg.map === false) {
+    out = out.filter((v) => v.path !== "map");
+  }
+  const cols = Number(cfg.max_columns);
+  if (Number.isFinite(cols) && cols > 0) {
+    out = out.map((v) => (v.type === "sections" ? { ...v, max_columns: cols } : v));
+  }
+  return out;
+};
+
+/* A view strategy must return exactly ONE view, while build() yields a list.
+ * Section views are merged by concatenating their sections. A panel view (the
+ * map) has no sections, so its cards become one full-width section instead -
+ * that keeps the map visible rather than silently dropping it. */
+const flattenToView = (views, title, icon) => {
+  const sections = [];
+  for (const v of views) {
+    if (Array.isArray(v.sections) && v.sections.length) {
+      sections.push(...v.sections);
+    } else if (Array.isArray(v.cards) && v.cards.length) {
+      sections.push(
+        grid(
+          v.cards.map((c) => ({
+            ...c,
+            grid_options: { columns: "full", rows: (c.grid_options || {}).rows ?? 8 },
+          }))
+        )
+      );
     }
   }
+  return { title, icon, type: "sections", max_columns: 2, sections };
+};
+
+function defineDashboardStrategy(name, { domain, title, icon, build, strings, description }) {
+  /* Shared by both strategy flavours: everything up to the finished view list. */
+  const buildViews = async (config, hass) => {
+    const t = translator(strings || {}, hass);
+    let registry;
+    try {
+      registry = await loadRegistry(hass);
+    } catch (err) {
+      // Registry unreachable: render a readable message rather than
+      // letting the dashboard fail with a blank screen.
+      return [{ title: title, cards: [emptyNotice(`\u26a0\ufe0f ${err}`)] }];
+    }
+    const domainEntries = entriesOfDomain(registry.entities, domain);
+    if (!domainEntries.length) {
+      return [{ title: title, icon, cards: [emptyNotice(t("not_configured"))] }];
+    }
+    const views = await build({
+      hass,
+      config,
+      t,
+      domain,
+      entities: domainEntries,
+      devices: registry.devices,
+      allEntities: registry.entities,
+      helpers: { heading, grid, tile, mapCard, emptyNotice, bySuffix, groupByDevice, deviceName },
+    });
+    return applyViewOptions(views, config);
+  };
+
+  class Strategy extends HTMLElement {
+    static async generate(config, hass) {
+      const views = await buildViews(config, hass);
+      return { title: (config && config.title) || title, views };
+    }
+  }
+
+  /* The view flavour: fills a single view of a dashboard the user built
+   * themselves, so adjusting the layout no longer requires "take control". */
+  class ViewStrategy extends HTMLElement {
+    static async generate(config, hass) {
+      const views = await buildViews(config, hass);
+      return flattenToView(views, (config && config.title) || title, icon);
+    }
+  }
+
   // getCreateSuggestions lets Home Assistant offer sensible defaults when the
   // strategy is picked from the "new dashboard" dialog.
   Strategy.getCreateSuggestions = () => ({ title, icon });
 
   customElements.define(`ll-strategy-dashboard-${name}`, Strategy);
+  customElements.define(`ll-strategy-view-${name}`, ViewStrategy);
 
   // Announce the strategy to the frontend so it appears in the dashboard
   // creation dialog instead of having to be typed into the raw editor.
@@ -685,6 +737,7 @@ function defineDashboardStrategy(name, { domain, title, icon, build, strings, de
   }
   return Strategy;
 }
+
 
 /* =====================================================================
  * Dashboard strategy: Austrian Charging Stations
