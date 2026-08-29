@@ -17,6 +17,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import (
     CONF_OPERATOR,
     CONF_PLUG_TYPE,
+    CONF_RADIUS_KM,
     CONF_STATUS,
     DOMAIN,
     FILTER_ALL,
@@ -42,7 +43,11 @@ async def async_setup_entry(
 
 
 class _FilterSelect(CoordinatorEntity[LadestellenAtCoordinator], SelectEntity):
-    """Base class: stores the selection in the config entry's options."""
+    """Base class: stores the selection in the config entry's options.
+
+    The suggested entity ids carry the radius, like the availability
+    sensor's does (number.py explains why). First creation only; existing
+    entities keep their id."""
 
     _attr_has_entity_name = False
     _option_key: str
@@ -64,7 +69,8 @@ class PlugTypeSelect(_FilterSelect):
         super().__init__(hass, coordinator, entry)
         self._attr_name = t("plug_type_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_plug_type"
-        self.entity_id = "select.at_charging_stations_plug_type"
+        radius = entry.data.get(CONF_RADIUS_KM)
+        self.entity_id = f"select.at_charging_stations_plug_type_{round(radius)}km"
 
     @property
     def options(self) -> list[str]:
@@ -92,7 +98,8 @@ class StatusSelect(_FilterSelect):
         super().__init__(hass, coordinator, entry)
         self._attr_name = t("status_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_status"
-        self.entity_id = "select.at_charging_stations_status"
+        radius = entry.data.get(CONF_RADIUS_KM)
+        self.entity_id = f"select.at_charging_stations_status_{round(radius)}km"
 
     @property
     def options(self) -> list[str]:
@@ -132,7 +139,8 @@ class OperatorSelect(_FilterSelect):
         super().__init__(hass, coordinator, entry)
         self._attr_name = t("operator_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_operator"
-        self.entity_id = "select.at_charging_stations_operator"
+        radius = entry.data.get(CONF_RADIUS_KM)
+        self.entity_id = f"select.at_charging_stations_operator_{round(radius)}km"
 
     @property
     def options(self) -> list[str]:

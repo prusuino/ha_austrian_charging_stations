@@ -37,22 +37,65 @@ ATTRIBUTION = "Data: ladestellen.at (E-Control Austria)"
 _UNIQUE_ID_PREFIX = f"{DOMAIN}_loc_"
 
 
+def _entry_unique_id_prefix(entry_id: str) -> str:
+    """Unique-id prefix of one config entry's markers. The entry id is part of
+    it so two radius entries covering the same site (a home and a work radius
+    that overlap) each get their own marker instead of fighting over one
+    registry entry — Home Assistant refuses the second as a duplicate id and
+    the site silently goes missing from that entry's map."""
+    return f"{_UNIQUE_ID_PREFIX}{entry_id}_"
+
+
+def _migrate_marker_registry(registry: er.EntityRegistry, entry_id: str) -> None:
+    """One-time registry maintenance for this entry's map markers, run before
+    the first marker is added so nothing gets registered twice:
+
+    - Markers used to be one per connector (unique id without the _loc_
+      prefix). Their registry entries would otherwise linger as unavailable
+      orphans after the switch to per-site markers, so they are removed.
+    - Per-site markers used to be keyed by the site id alone (see
+      _entry_unique_id_prefix). Those are migrated in place to the
+      entry-scoped id, so the entity id, its history and whatever the user
+      changed on it (name, visibility, area) survive.
+
+    Only registry entries belonging to this config entry are touched.
+    """
+    entry_prefix = _entry_unique_id_prefix(entry_id)
+    for reg_entry in er.async_entries_for_config_entry(registry, entry_id):
+        if reg_entry.domain != "geo_location":
+            continue
+        unique_id = reg_entry.unique_id
+        if not unique_id.startswith(_UNIQUE_ID_PREFIX):
+            registry.async_remove(reg_entry.entity_id)
+            continue
+        if unique_id.startswith(entry_prefix):
+            continue
+        new_unique_id = f"{entry_prefix}{unique_id[len(_UNIQUE_ID_PREFIX):]}"
+        if registry.async_get_entity_id("geo_location", DOMAIN, new_unique_id):
+            # The migrated twin already exists (an earlier run was cut short
+            # by an error) — this one would only be a duplicate now.
+            registry.async_remove(reg_entry.entity_id)
+            continue
+        registry.async_update_entity(reg_entry.entity_id, new_unique_id=new_unique_id)
+        _LOGGER.debug("Migrated map marker %s to the entry-scoped unique id", reg_entry.entity_id)
+
+
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     coordinator: LadestellenAtCoordinator = hass.data[DOMAIN][entry.entry_id]
     known_entities: dict[str, ChargingSiteEvent] = {}
 
-    # One-time cleanup: markers used to be one per connector (unique_id
-    # without the _loc_ prefix). Their registry entries would otherwise
-    # linger as unavailable orphans after the switch to per-site markers.
-    registry = er.async_get(hass)
-    for reg_entry in er.async_entries_for_config_entry(registry, entry.entry_id):
-        if reg_entry.domain == "geo_location" and not reg_entry.unique_id.startswith(_UNIQUE_ID_PREFIX):
-            registry.async_remove(reg_entry.entity_id)
+    # Before the first marker is added, so nothing gets registered twice.
+    _migrate_marker_registry(er.async_get(hass), entry.entry_id)
 
     @callback
     def _sync_entities() -> None:
+        # Runs on every coordinator notification — including a failed
+        # refresh, which keeps the previous data but flips
+        # last_update_success. The in-place update below then writes state
+        # for every surviving marker, which is what publishes the
+        # availability change (see ChargingSiteEvent.available).
         locations = (coordinator.data or {}).get("filtered_locations", {})
 
         if len(locations) > MAX_MAP_MARKERS:
@@ -71,7 +114,9 @@ async def async_setup_entry(
         for location_id, location in locations.items():
             existing = known_entities.get(location_id)
             if existing is None:
-                known_entities[location_id] = ChargingSiteEvent(hass, location_id, location)
+                known_entities[location_id] = ChargingSiteEvent(
+                    hass, coordinator, entry.entry_id, location_id, location
+                )
                 new_entities.append(known_entities[location_id])
             else:
                 existing.update_location(location)
@@ -89,7 +134,8 @@ async def async_setup_entry(
 class ChargingSiteEvent(GeolocationEvent):
     """One physical charging site (all its connectors combined). Lifecycle
     (appearing/disappearing) is managed by the sync function above; label
-    and attributes are refreshed in place on every coordinator update."""
+    and attributes are refreshed in place on every coordinator update, and
+    availability follows the coordinator's last refresh."""
 
     _attr_should_poll = False
     _attr_source = SOURCE
@@ -104,10 +150,18 @@ class ChargingSiteEvent(GeolocationEvent):
     # decision alone and is never rewritten from here.
     _attr_entity_registry_visible_default = False
 
-    def __init__(self, hass: HomeAssistant, location_id: str, location: dict) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        coordinator: LadestellenAtCoordinator,
+        entry_id: str,
+        location_id: str,
+        location: dict,
+    ) -> None:
         self._hass_ref = hass
+        self._coordinator = coordinator
         self._location = location
-        self._attr_unique_id = f"{_UNIQUE_ID_PREFIX}{location_id}"
+        self._attr_unique_id = f"{_entry_unique_id_prefix(entry_id)}{location_id}"
 
         name = location.get("station_name") or location.get("city") or t("station_fallback_name", hass)
         max_power = self._max_power_kw(location)
@@ -126,6 +180,16 @@ class ChargingSiteEvent(GeolocationEvent):
         self._attr_distance = location.get("distance_km")
         if self.hass:
             self.async_write_ha_state()
+
+    @property
+    def available(self) -> bool:
+        """Like the sensors: while the source is unreachable the marker is
+        unavailable instead of showing its last known label indefinitely.
+        Not a CoordinatorEntity (the lifecycle is managed by the sync
+        function), so this reads the coordinator directly; the sync function
+        writes state after every refresh, failed ones included, so a flip
+        reaches the state machine."""
+        return self._coordinator.last_update_success
 
     @staticmethod
     def _max_power_kw(location: dict) -> float:

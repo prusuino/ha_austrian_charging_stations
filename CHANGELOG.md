@@ -1,10 +1,15 @@
 # Changelog
 
-## 1.2.1 — 2026-08-29
+## 1.3.0 — 2026-08-29
 
+- **Fixed: the map markers of two overlapping radius entries no longer collide.** A marker's unique id was the site's id alone, so when a second radius entry covered some of the same sites (a home and a work radius that overlap, say), Home Assistant rejected that entry's markers for the shared sites as duplicates — they were silently missing from its map, with nothing but a log line. The unique id now includes the config entry. **Existing markers are migrated automatically on the first start**: each radius entry's registry entries are moved to the new unique id in place, so entity ids, history, and anything you changed on a marker (name, visibility, area) are kept. Nothing to do on your side.
+- **Fixed: map markers go unavailable while the data source is unreachable**, as the sensors already did. Until now a marker kept showing its last known label ("6/7 available") indefinitely, however stale the data behind it was.
+- **Changed: the filter entities' suggested entity ids now carry the radius**, matching the availability sensor: `number.at_charging_stations_min_power_kw_15km`, `select.at_charging_stations_plug_type_15km`, `select.at_charging_stations_status_15km` and `select.at_charging_stations_operator_15km` for a 15 km entry. The previous fixed ids were shared by every radius entry, which Home Assistant resolved by appending `_2` to the second — an automation copied from one entry silently targeted the other. A suggested id only applies when an entity is first created, so **the entities of existing entries keep the ids they have**; only newly added radius entries get the new form.
 - **New: strategy options.** Keys under `strategy:` are now honoured — `map: false`, `title`, `max_columns`. Unknown keys are ignored, so a typo cannot break the dashboard.
 - **New: view strategy.** Next to the dashboard strategy the card file now also registers `ll-strategy-view-...`, so a single view of your own dashboard can be filled by the strategy (`views: - strategy: {type: custom:...}`) while every other view stays hand-editable. Until now the only way to change anything was *Take control*, which permanently stops the dashboard from following your config entries.
-- No changes to the integration itself; only the bundled card file and the README.
+- Documented: a map marker's entity id follows its localized name (`geo_location.ladestation_…` on a German instance, `geo_location.charging_station_…` on an English one), so it differs between installations. The README now shows how to address markers independently of the language — the map card's `geo_location_sources` and the `source` attribute in templates.
+- README: the installation instructions now describe the HACS default listing, with a My Home Assistant button that opens the integration directly in HACS.
+- Changed: the minimum Home Assistant version is now **2025.4.0**. The strategy labels each map marker with its live availability (`label_mode: attribute` on the map card's geo-location sources), and that option only exists in the map card since 2025.4; on an older release the markers render without labels. The integration itself still runs on 2024.12, the floor states what the generated dashboard needs.
 
 ## 1.2.0 — 2026-08-29
 
