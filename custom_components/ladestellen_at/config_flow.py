@@ -7,15 +7,18 @@ Two independent kinds of entry, chosen in the first step:
   independent of any location or radius. Repeatable — add the integration
   again for another favorite.
 
-Every entry carries the user's personal API key (free registration at
-admin.ladestellen.at); the key field is prefilled from any already
-configured entry.
+Every entry carries its own copy of the user's personal API key (free
+registration at admin.ladestellen.at). The key is entered through a masked
+password field and is never prefilled — not from another entry, not from
+storage. When the API starts rejecting a stored key, Home Assistant opens
+the reauth step (async_step_reauth), which asks for a replacement, checks it
+and reloads the entry with it.
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
-import aiohttp
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.core import callback
@@ -28,6 +31,9 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
 )
 
 from .const import (
@@ -57,7 +63,9 @@ from .coordinator import (
     apply_filters,
     async_fetch_stations,
     async_find_station_by_evse_id,
+    async_validate_api_key,
     group_by_location,
+    is_auth_error,
 )
 from .localization import location_display_label, station_display_label, t
 
@@ -75,9 +83,9 @@ _RADIUS_SELECTOR = NumberSelector(
     NumberSelectorConfig(min=1, max=MAX_RADIUS_KM, step=0.5, unit_of_measurement="km", mode=NumberSelectorMode.BOX)
 )
 
-
-def _is_auth_error(err: Exception) -> bool:
-    return isinstance(err, aiohttp.ClientResponseError) and err.status in (401, 403)
+# Masked input for every API-key field (radius, favorite, reauth). The key is
+# a credential: a plain str field would render it in cleartext.
+_API_KEY_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 
 
 class LadestellenAtConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -102,13 +110,33 @@ class LadestellenAtConfigFlow(ConfigFlow, domain=DOMAIN):
         self._confirm_station: dict | None = None
         self._confirm_location_id: str | None = None
 
-    def _default_api_key(self) -> str:
-        """Prefill the key from any already configured entry."""
-        for entry in self._async_current_entries():
-            key = entry.data.get(CONF_API_KEY)
-            if key:
-                return key
-        return ""
+    async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> FlowResult:
+        """Started by Home Assistant when a refresh reports the stored key as
+        rejected (coordinator._refresh_error raises ConfigEntryAuthFailed)."""
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        """Ask for a replacement key, check it with the same request the
+        entry makes on every refresh, then store it and reload the entry.
+        Only the key changes; location, radius, favorite and options stay."""
+        errors: dict[str, str] = {}
+        entry = self._get_reauth_entry()
+        if user_input is not None:
+            api_key = (user_input.get(CONF_API_KEY) or "").strip()
+            try:
+                await async_validate_api_key(self.hass, api_key, entry.data)
+            except Exception as err:  # noqa: BLE001 - map to form errors
+                errors["base"] = "invalid_auth" if is_auth_error(err) else "cannot_connect"
+            else:
+                return self.async_update_reload_and_abort(entry, data_updates={CONF_API_KEY: api_key})
+
+        schema = vol.Schema({vol.Required(CONF_API_KEY): _API_KEY_SELECTOR})
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=schema,
+            errors=errors,
+            description_placeholders={"title": entry.title},
+        )
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         if user_input is not None:
@@ -143,7 +171,7 @@ class LadestellenAtConfigFlow(ConfigFlow, domain=DOMAIN):
             try:
                 await async_fetch_stations(self.hass, api_key, lat, lon, radius)
             except Exception as err:  # noqa: BLE001 - map to form errors
-                errors["base"] = "invalid_auth" if _is_auth_error(err) else "cannot_connect"
+                errors["base"] = "invalid_auth" if is_auth_error(err) else "cannot_connect"
             else:
                 await self.async_set_unique_id(f"radius_{round(lat, 2)}_{round(lon, 2)}_{radius}")
                 self._abort_if_unique_id_configured()
@@ -160,7 +188,7 @@ class LadestellenAtConfigFlow(ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema(
             {
-                vol.Required(CONF_API_KEY, default=self._default_api_key()): str,
+                vol.Required(CONF_API_KEY): _API_KEY_SELECTOR,
                 vol.Required(CONF_LATITUDE, default=self.hass.config.latitude): vol.Coerce(float),
                 vol.Required(CONF_LONGITUDE, default=self.hass.config.longitude): vol.Coerce(float),
                 vol.Required(CONF_RADIUS_KM, default=DEFAULT_RADIUS_KM): _RADIUS_SELECTOR,
@@ -181,7 +209,7 @@ class LadestellenAtConfigFlow(ConfigFlow, domain=DOMAIN):
                 try:
                     station_json = await async_find_station_by_evse_id(self.hass, self._api_key, station_id)
                 except Exception as err:  # noqa: BLE001 - map to form errors
-                    errors["base"] = "invalid_auth" if _is_auth_error(err) else "cannot_connect"
+                    errors["base"] = "invalid_auth" if is_auth_error(err) else "cannot_connect"
                 else:
                     if station_json is None:
                         errors[CONF_STATION_ID] = "station_not_found"
@@ -214,7 +242,7 @@ class LadestellenAtConfigFlow(ConfigFlow, domain=DOMAIN):
                 try:
                     stations = await async_fetch_stations(self.hass, self._api_key, lat, lon, radius)
                 except Exception as err:  # noqa: BLE001 - map to form errors
-                    errors["base"] = "invalid_auth" if _is_auth_error(err) else "cannot_connect"
+                    errors["base"] = "invalid_auth" if is_auth_error(err) else "cannot_connect"
                 else:
                     stations = apply_filters(
                         stations,
@@ -231,7 +259,7 @@ class LadestellenAtConfigFlow(ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema(
             {
-                vol.Required(CONF_API_KEY, default=self._api_key or self._default_api_key()): str,
+                vol.Required(CONF_API_KEY): _API_KEY_SELECTOR,
                 vol.Optional(CONF_STATION_ID, default=""): str,
                 vol.Optional(CONF_LATITUDE, default=self.hass.config.latitude): vol.Coerce(float),
                 vol.Optional(CONF_LONGITUDE, default=self.hass.config.longitude): vol.Coerce(float),
@@ -376,7 +404,7 @@ class LadestellenAtConfigFlow(ConfigFlow, domain=DOMAIN):
             title=t("favorite_device_name", self.hass, name=name),
             data={
                 CONF_ENTRY_TYPE: ENTRY_TYPE_FAVORITE,
-                CONF_API_KEY: self._api_key or self._default_api_key(),
+                CONF_API_KEY: self._api_key,
                 CONF_STATION_ID: evse_id,
                 CONF_FAVORITE_NAME: custom_name or None,
             },
@@ -395,7 +423,7 @@ class LadestellenAtConfigFlow(ConfigFlow, domain=DOMAIN):
             title=t("favorite_location_device_name", self.hass, name=name),
             data={
                 CONF_ENTRY_TYPE: ENTRY_TYPE_FAVORITE_LOCATION,
-                CONF_API_KEY: self._api_key or self._default_api_key(),
+                CONF_API_KEY: self._api_key,
                 CONF_STATION_LOCATION_ID: location_id,
                 CONF_FAVORITE_NAME: custom_name or None,
             },

@@ -15,11 +15,15 @@ from __future__ import annotations
 
 import logging
 import math
+from collections.abc import Mapping
 from datetime import datetime, timedelta
+from typing import Any
 from zoneinfo import ZoneInfo
 
+import aiohttp
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -28,6 +32,7 @@ from .const import (
     API_REFERER,
     AT_STATUS_MAP,
     CONF_API_KEY,
+    CONF_ENTRY_TYPE,
     CONF_LATITUDE,
     CONF_LONGITUDE,
     CONF_MIN_POWER_KW,
@@ -39,6 +44,8 @@ from .const import (
     CONF_STATUS,
     DEFAULT_MIN_POWER_KW,
     DOMAIN,
+    ENTRY_TYPE_FAVORITE,
+    ENTRY_TYPE_FAVORITE_LOCATION,
     FETCH_TIMEOUT_SECONDS,
     FILTER_ALL,
     KNOWN_PLUG_TYPES,
@@ -62,6 +69,29 @@ async def _api_get(hass: HomeAssistant, api_key: str, path: str, params: dict | 
     ) as resp:
         resp.raise_for_status()
         return await resp.json(content_type=None)
+
+
+def is_auth_error(err: Exception) -> bool:
+    """True when the API rejected the key itself (HTTP 401/403 from
+    raise_for_status in _api_get), as opposed to an outage, a timeout or a
+    malformed request. Shared by the config flow (form error invalid_auth vs
+    cannot_connect) and the coordinators (reauth vs keep retrying)."""
+    return isinstance(err, aiohttp.ClientResponseError) and err.status in (401, 403)
+
+
+def _refresh_error(err: Exception) -> Exception:
+    """The exception a coordinator raises for one failed refresh.
+
+    A rejected key becomes ConfigEntryAuthFailed: Home Assistant then stops
+    polling and starts the reauth flow (config_flow.async_step_reauth), which
+    asks the user for a new key. Everything else — unreachable, timeout,
+    server error — is UpdateFailed, which keeps retrying on the normal
+    interval and marks the entities unavailable meanwhile. Without the
+    distinction a revoked key was indistinguishable from an outage and never
+    prompted for a replacement."""
+    if is_auth_error(err):
+        return ConfigEntryAuthFailed("ladestellen.at rejected the API key")
+    return UpdateFailed(f"ladestellen.at unreachable: {err}")
 
 
 def _as_list(value) -> list:
@@ -266,6 +296,23 @@ async def async_fetch_station_location(hass: HomeAssistant, api_key: str, locati
     return await _fetch_station_with_points(hass, api_key, country, operator, station_id)
 
 
+async def async_validate_api_key(hass: HomeAssistant, api_key: str, entry_data: Mapping[str, Any]) -> None:
+    """Check a (replacement) API key with the same request the entry makes on
+    every refresh, so a key that passes here is one the reloaded entry will
+    work with. Used by the reauth step. Raises whatever the request raises;
+    the caller sorts it into invalid_auth vs cannot_connect via
+    is_auth_error()."""
+    entry_type = entry_data.get(CONF_ENTRY_TYPE)
+    if entry_type == ENTRY_TYPE_FAVORITE:
+        await async_find_station_by_evse_id(hass, api_key, entry_data[CONF_STATION_ID])
+    elif entry_type == ENTRY_TYPE_FAVORITE_LOCATION:
+        await async_fetch_station_location(hass, api_key, entry_data[CONF_STATION_LOCATION_ID])
+    else:
+        await async_fetch_stations(
+            hass, api_key, entry_data[CONF_LATITUDE], entry_data[CONF_LONGITUDE], entry_data[CONF_RADIUS_KM]
+        )
+
+
 async def async_resolve_site(hass: HomeAssistant, api_key: str, station: dict) -> dict | None:
     """Expand one resolved charge point to its full site (station). The
     registry already scopes stations as physical sites, so this is a single
@@ -462,9 +509,12 @@ class LadestellenAtCoordinator(DataUpdateCoordinator[dict]):
     current (live-adjustable) filters from the config entry's options."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+        # The entry is passed explicitly: the coordinator starts the reauth
+        # flow on it when a refresh raises ConfigEntryAuthFailed.
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=entry,
             name=DOMAIN,
             update_interval=timedelta(minutes=UPDATE_INTERVAL_MINUTES),
         )
@@ -481,7 +531,7 @@ class LadestellenAtCoordinator(DataUpdateCoordinator[dict]):
                 data[CONF_RADIUS_KM],
             )
         except Exception as err:
-            raise UpdateFailed(f"ladestellen.at unreachable: {err}") from err
+            raise _refresh_error(err) from err
 
         options = self._entry.options
         filtered = apply_filters(
@@ -538,6 +588,7 @@ class FavoriteStationCoordinator(DataUpdateCoordinator[dict]):
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=entry,
             name=DOMAIN,
             update_interval=timedelta(minutes=UPDATE_INTERVAL_MINUTES),
         )
@@ -548,7 +599,7 @@ class FavoriteStationCoordinator(DataUpdateCoordinator[dict]):
         try:
             station = await async_fetch_station_by_id(self.hass, _entry_api_key(self._entry), evse_id)
         except Exception as err:
-            raise UpdateFailed(f"ladestellen.at unreachable: {err}") from err
+            raise _refresh_error(err) from err
         if station is None:
             raise UpdateFailed(f"Charge point {evse_id} no longer found in ladestellen.at data")
         return station
@@ -562,6 +613,7 @@ class FavoriteLocationCoordinator(DataUpdateCoordinator[dict]):
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=entry,
             name=DOMAIN,
             update_interval=timedelta(minutes=UPDATE_INTERVAL_MINUTES),
         )
@@ -572,7 +624,7 @@ class FavoriteLocationCoordinator(DataUpdateCoordinator[dict]):
         try:
             connectors = await async_fetch_station_location(self.hass, _entry_api_key(self._entry), location_id)
         except Exception as err:
-            raise UpdateFailed(f"ladestellen.at unreachable: {err}") from err
+            raise _refresh_error(err) from err
         if not connectors:
             raise UpdateFailed(f"Site {location_id} no longer has any charge points in ladestellen.at data")
         groups = group_by_location(connectors)

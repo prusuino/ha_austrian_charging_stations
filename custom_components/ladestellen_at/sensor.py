@@ -41,7 +41,7 @@ from .coordinator import (
     site_status,
     weekly_opening_periods,
 )
-from .device import device_info
+from .device import device_info, entry_suffix
 from .localization import localized_site_status, localized_status, t, weekday_short
 
 _LOGGER = logging.getLogger(__name__)
@@ -95,8 +95,11 @@ async def async_setup_entry(
     if entry_type == ENTRY_TYPE_FAVORITE_LOCATION:
         location_coordinator: FavoriteLocationCoordinator = hass.data[DOMAIN][entry.entry_id]
         site_name = _favorite_location_name(entry, location_coordinator.data or {})
-        site_slug = slugify(site_name)
-        summary_sensor = FavoriteLocationSensor(hass, location_coordinator, entry)
+        # Object-id stem shared by every sensor of this site. The entry
+        # suffix keeps two favorite sites of the same name apart (see
+        # entry_suffix) — slugify(name) alone would suggest identical ids.
+        site_slug = f"{slugify(site_name)}_{entry_suffix(entry)}"
+        summary_sensor = FavoriteLocationSensor(hass, location_coordinator, entry, site_slug)
         status_sensor = FavoriteLocationStatusSensor(hass, location_coordinator, entry, site_slug)
         async_add_entities([summary_sensor, status_sensor])
 
@@ -140,6 +143,9 @@ async def async_setup_entry(
                 async_add_entities(new_entities)
 
             for evse_id in [e for e in known_connectors if e not in connectors]:
+                # Registry rows are kept on purpose, as for map markers (see
+                # geo_location.py): a connector the source drops usually
+                # reappears, and then gets its entity id and history back.
                 for entity in known_connectors.pop(evse_id):
                     hass.async_create_task(entity.async_remove(force_remove=True))
 
@@ -158,6 +164,7 @@ async def async_setup_entry(
                     plug_entities.append(sensor)
                 async_add_entities(plug_entities)
             for plug_type in [p for p in known_plug_sensors if p not in plug_types]:
+                # Data-driven like the connectors above: registry row kept.
                 hass.async_create_task(known_plug_sensors.pop(plug_type).async_remove(force_remove=True))
 
         entry.async_on_unload(location_coordinator.async_add_listener(_sync_connector_entities))
@@ -193,8 +200,12 @@ async def async_setup_entry(
 
             async def _remove(sensor=sensor, entity_id=entity_id) -> None:
                 await sensor.async_remove(force_remove=True)
-                # Drop the registry entry too, otherwise the deselected
-                # sensor lingers as a dead "no longer provided" entity.
+                # Drop the registry row too — unlike a map marker whose site
+                # left the radius (geo_location.py keeps that row because
+                # the site may come back), this sensor is gone because the
+                # user deselected its plug type in the Configure dialog, and
+                # it would otherwise linger as a dead "no longer provided"
+                # entity.
                 if registry.async_get(entity_id):
                     registry.async_remove(entity_id)
 
@@ -222,8 +233,11 @@ class ChargingStationsFreeSensor(CoordinatorEntity[LadestellenAtCoordinator], Se
         self._attr_name = t("sensor_free_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_free"
         self._attr_device_info = device_info(hass, entry)
+        # Radius plus entry suffix: the radius alone does not tell two
+        # entries at different locations apart (see entry_suffix). Suggested
+        # on first creation only; existing entities keep their id.
         radius = entry.data.get(CONF_RADIUS_KM)
-        self.entity_id = f"sensor.at_charging_stations_available_{round(radius)}km"
+        self.entity_id = f"sensor.at_charging_stations_available_{round(radius)}km_{entry_suffix(entry)}"
 
     @property
     def native_value(self):
@@ -273,7 +287,7 @@ class ChargingStationsPlugTypeFreeSensor(CoordinatorEntity[LadestellenAtCoordina
         self._attr_unique_id = f"{entry.entry_id}_free_{slug}"
         self._attr_device_info = device_info(hass, entry)
         radius = entry.data.get(CONF_RADIUS_KM)
-        self.entity_id = f"sensor.at_charging_stations_available_{round(radius)}km_{slug}"
+        self.entity_id = f"sensor.at_charging_stations_available_{round(radius)}km_{entry_suffix(entry)}_{slug}"
 
     @property
     def native_value(self):
@@ -308,7 +322,9 @@ class FavoriteStationSensor(CoordinatorEntity[FavoriteStationCoordinator], Senso
         self._attr_name = t("favorite_status_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_status"
         self._attr_device_info = device_info(hass, entry)
-        self.entity_id = f"sensor.at_charging_station_favorite_{slugify(name)}"
+        # Name plus entry suffix: two favorites can share a name (see
+        # entry_suffix). Suggested on first creation only.
+        self.entity_id = f"sensor.at_charging_station_favorite_{slugify(name)}_{entry_suffix(entry)}"
 
     @property
     def native_value(self):
@@ -380,7 +396,7 @@ class FavoriteStationPowerSensor(CoordinatorEntity[FavoriteStationCoordinator], 
         self._attr_name = t("favorite_power_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_power"
         self._attr_device_info = device_info(hass, entry)
-        self.entity_id = f"sensor.at_charging_station_favorite_{slugify(name)}_power_kw"
+        self.entity_id = f"sensor.at_charging_station_favorite_{slugify(name)}_{entry_suffix(entry)}_power_kw"
 
     @property
     def native_value(self):
@@ -405,7 +421,7 @@ class FavoriteStationPriceSensor(CoordinatorEntity[FavoriteStationCoordinator], 
         self._attr_name = t("favorite_price_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_price"
         self._attr_device_info = device_info(hass, entry)
-        self.entity_id = f"sensor.at_charging_station_favorite_{slugify(name)}_price_ct_kwh"
+        self.entity_id = f"sensor.at_charging_station_favorite_{slugify(name)}_{entry_suffix(entry)}_price_ct_kwh"
 
     @property
     def native_value(self):
@@ -428,7 +444,7 @@ class FavoriteStationPlugTypeSensor(CoordinatorEntity[FavoriteStationCoordinator
         self._attr_name = t("favorite_plug_type_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_plug_type"
         self._attr_device_info = device_info(hass, entry)
-        self.entity_id = f"sensor.at_charging_station_favorite_{slugify(name)}_plug_type"
+        self.entity_id = f"sensor.at_charging_station_favorite_{slugify(name)}_{entry_suffix(entry)}_plug_type"
 
     @property
     def native_value(self):
@@ -449,7 +465,7 @@ class FavoriteStationOperatorSensor(CoordinatorEntity[FavoriteStationCoordinator
         self._attr_name = t("favorite_operator_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_operator"
         self._attr_device_info = device_info(hass, entry)
-        self.entity_id = f"sensor.at_charging_station_favorite_{slugify(name)}_operator"
+        self.entity_id = f"sensor.at_charging_station_favorite_{slugify(name)}_{entry_suffix(entry)}_operator"
 
     @property
     def native_value(self):
@@ -473,7 +489,7 @@ class FavoriteStationIdSensor(CoordinatorEntity[FavoriteStationCoordinator], Sen
         self._attr_name = t("favorite_station_id_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_station_id"
         self._attr_device_info = device_info(hass, entry)
-        self.entity_id = f"sensor.at_charging_station_favorite_{slugify(name)}_station_id"
+        self.entity_id = f"sensor.at_charging_station_favorite_{slugify(name)}_{entry_suffix(entry)}_station_id"
 
     @property
     def native_value(self):
@@ -501,15 +517,16 @@ class FavoriteLocationSensor(CoordinatorEntity[FavoriteLocationCoordinator], Sen
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_icon = "mdi:ev-station"
 
-    def __init__(self, hass: HomeAssistant, coordinator: FavoriteLocationCoordinator, entry: ConfigEntry) -> None:
+    def __init__(
+        self, hass: HomeAssistant, coordinator: FavoriteLocationCoordinator, entry: ConfigEntry, site_slug: str
+    ) -> None:
         super().__init__(coordinator)
         self._hass_ref = hass
         self._entry = entry
-        name = _favorite_location_name(entry, coordinator.data or {})
         self._attr_name = t("favorite_location_available_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_available"
         self._attr_device_info = device_info(hass, entry)
-        self.entity_id = f"sensor.at_charging_station_favorite_location_{slugify(name)}"
+        self.entity_id = f"sensor.at_charging_station_favorite_location_{site_slug}"
 
     @property
     def native_value(self):

@@ -20,7 +20,9 @@ The ladestellen.at API is free but requires a personal API key:
 
 1. Register at **https://admin.ladestellen.at/#/api/registrieren** and accept the terms of use.
 2. When asked for the authorized domain, enter **`homeassistant.local`** — the integration identifies itself with that domain, so the key only works if it was registered for it.
-3. The key arrives by e-mail. Enter it when adding the integration; further entries prefill it automatically.
+3. The key arrives by e-mail. Enter it when adding the integration — every entry (radius overview or favorite) asks for it; the field is masked and is never prefilled, not even from an existing entry.
+
+If ladestellen.at later rejects the stored key (revoked, expired, re-registered for a different domain), the affected entry does not just retry in the dark: Home Assistant shows a **re-authentication** notification under Settings → Devices & services. Enter the new key there — it is checked with the same request the entry makes on every refresh, stored, and the entry is reloaded. Location, radius, favorite and filter settings are untouched.
 
 ## What it provides
 
@@ -29,14 +31,14 @@ The ladestellen.at API is free but requires a personal API key:
 | Entity | Type | Description |
 |---|---|---|
 | `geo_location.charging_station_...` (English) / `geo_location.ladestation_...` (German) — see [Addressing the map markers](#addressing-the-map-markers) | Geo-location | One per matching charging **site** (charge points at the same station are grouped). State = distance from your configured location (km). The map label shows availability — "6/7 available" for multi-connector sites, the plain status for single chargers — refreshed live on every update; the marker goes unavailable while the data source is unreachable. Attributes: available/total count, max power (kW), plug types, operator, address, opening hours. |
-| `sensor.at_charging_stations_available_<radius>km` | Sensor | Count of currently available charge points matching the active filters within the radius. Attributes include totals, active filter values, the plug types/operators found in range, and `available_by_plug_type` — the available count per plug type as a dictionary. |
-| `sensor.at_charging_stations_available_<radius>km_<plug>` | Sensor | Optional, one per plug type selected in the integration's **Configure** dialog (e.g. `..._ccs`, `..._type2`): count of available charge points offering that plug type. Respects the minimum-power and operator filters but ignores the live plug-type/status filters — filtering the map to Type 2 doesn't zero your "free CCS" count. |
-| `number.at_charging_stations_min_power_kw_<radius>km` | Number | Minimum power filter (kW) — e.g. set to 50 to only show fast chargers. Takes effect immediately. |
-| `select.at_charging_stations_plug_type_<radius>km` | Select | Plug type filter (see plug families below). |
-| `select.at_charging_stations_status_<radius>km` | Select | Availability filter: all / available only / occupied only. |
-| `select.at_charging_stations_operator_<radius>km` | Select | Operator filter, options discovered dynamically from stations in range. |
+| `sensor.at_charging_stations_available_<radius>km_<id>` | Sensor | Count of currently available charge points matching the active filters within the radius. Attributes include totals, active filter values, the plug types/operators found in range, and `available_by_plug_type` — the available count per plug type as a dictionary. |
+| `sensor.at_charging_stations_available_<radius>km_<id>_<plug>` | Sensor | Optional, one per plug type selected in the integration's **Configure** dialog (e.g. `..._ccs`, `..._type2`): count of available charge points offering that plug type. Respects the minimum-power and operator filters but ignores the live plug-type/status filters — filtering the map to Type 2 doesn't zero your "free CCS" count. |
+| `number.at_charging_stations_min_power_kw_<radius>km_<id>` | Number | Minimum power filter (kW) — e.g. set to 50 to only show fast chargers. Takes effect immediately. |
+| `select.at_charging_stations_plug_type_<radius>km_<id>` | Select | Plug type filter (see plug families below). |
+| `select.at_charging_stations_status_<radius>km_<id>` | Select | Availability filter: all / available only / occupied only. |
+| `select.at_charging_stations_operator_<radius>km_<id>` | Select | Operator filter, options discovered dynamically from stations in range. |
 
-`<radius>` is the entry's radius in km — `sensor.at_charging_stations_available_15km`, `select.at_charging_stations_status_15km` — so the entities of two radius entries stay apart. These are the ids suggested when an entity is first created; the filter entities of a radius entry set up with version 1.2 or earlier keep the ids they already have (without the radius suffix), and any entity can be renamed in its settings at any time.
+`<radius>` is the entry's radius in km and `<id>` the last four characters of the entry's config entry id, lower-case — `sensor.at_charging_stations_available_15km_k7qa`, `select.at_charging_stations_status_15km_k7qa`. The radius alone does not tell two entries apart (a home and a work radius of the same size are allowed), so the `<id>` part does; it is fixed for the life of the entry. These are the ids suggested when an entity is first created: entities that already exist keep whatever id they have — the filter entities of an entry set up with version 1.2 or earlier have no radius suffix, entries set up with 1.3 have the radius but no `<id>` — and any entity can be renamed in its settings at any time.
 
 Filter changes via the `number`/`select` entities apply immediately — no waiting for the next poll. Data is refreshed every 5 minutes.
 
@@ -77,12 +79,14 @@ The registry reports connector types in two coexisting vocabularies (legacy keys
 
 | Entity | Type | Description |
 |---|---|---|
-| `sensor.at_charging_station_favorite_<name>` | Sensor | Current status (available / occupied / out of service). Attributes include the finer-grained raw registry status (`at_status`: AVAILABLE / CHARGING / RESERVED / BLOCKED / ...), the ad-hoc price (`price_cent_kwh`), and the operator's green-energy declaration. |
-| `sensor.at_charging_station_favorite_<name>_power_kw` | Sensor | Charging power (kW), as its own graphable sensor. |
-| `sensor.at_charging_station_favorite_<name>_price_ct_kwh` | Sensor | Ad-hoc price in cents per kWh (0 for explicitly free chargers). |
-| `sensor.at_charging_station_favorite_<name>_plug_type` | Sensor | Plug type(s) of the charge point. |
-| `sensor.at_charging_station_favorite_<name>_operator` | Sensor | The charge point's operator. |
-| `sensor.at_charging_station_favorite_<name>_station_id` | Sensor | The charge point's EvseID (diagnostic). |
+| `sensor.at_charging_station_favorite_<name>_<id>` | Sensor | Current status (available / occupied / out of service). Attributes include the finer-grained raw registry status (`at_status`: AVAILABLE / CHARGING / RESERVED / BLOCKED / ...), the ad-hoc price (`price_cent_kwh`), and the operator's green-energy declaration. |
+| `sensor.at_charging_station_favorite_<name>_<id>_power_kw` | Sensor | Charging power (kW), as its own graphable sensor. |
+| `sensor.at_charging_station_favorite_<name>_<id>_price_ct_kwh` | Sensor | Ad-hoc price in cents per kWh (0 for explicitly free chargers). |
+| `sensor.at_charging_station_favorite_<name>_<id>_plug_type` | Sensor | Plug type(s) of the charge point. |
+| `sensor.at_charging_station_favorite_<name>_<id>_operator` | Sensor | The charge point's operator. |
+| `sensor.at_charging_station_favorite_<name>_<id>_station_id` | Sensor | The charge point's EvseID (diagnostic). |
+
+`<name>` is the favorite's name (your custom name, otherwise the station name from the registry) as a slug, `<id>` the last four characters of the config entry id — `sensor.at_charging_station_favorite_hauptbahnhof_linz_k7qa_power_kw`. Two favorites can share a name (the same site pinned twice, two chargers named after the same street), and the `<id>` part keeps their entities apart. As with the radius entities, these ids are suggested on first creation only; favorites set up with earlier versions keep the ids they have.
 
 The [dashboard strategy](#dashboard) below lays all six out for you, without you building a card by hand.
 
@@ -90,17 +94,17 @@ The [dashboard strategy](#dashboard) below lays all six out for you, without you
 
 | Entity | Type | Description |
 |---|---|---|
-| `sensor.at_charging_station_favorite_location_<name>` | Sensor | State = number of currently available charge points at the site. Attributes: total charge point count, `available_by_plug_type`, derived site status, address, and a `connectors` list with each charge point's own status, raw registry status, power (kW), plug type, and price. |
-| `sensor.at_charging_station_favorite_location_<name>_available_<plug>` | Sensor | One per plug type present at the site (e.g. `..._available_ccs`): number of currently available charge points offering that plug type. Created automatically. |
-| `sensor.at_charging_station_favorite_location_<name>_status` | Sensor | Derived overall site status: available / occupied / **closed** (outside opening hours) / out of service. Localized state; raw `site_status` attribute for automations. |
-| `sensor.at_charging_station_favorite_location_<name>_connector_<n>_status` | Sensor | Current status of charge point `<n>` at the site. |
-| `sensor.at_charging_station_favorite_location_<name>_connector_<n>_power_kw` | Sensor | Charging power (kW) of charge point `<n>`. |
-| `sensor.at_charging_station_favorite_location_<name>_connector_<n>_price_ct_kwh` | Sensor | Ad-hoc price (cents per kWh) of charge point `<n>`. |
-| `sensor.at_charging_station_favorite_location_<name>_connector_<n>_plug_type` | Sensor | Plug type(s) of charge point `<n>`. |
-| `sensor.at_charging_station_favorite_location_<name>_connector_<n>_operator` | Sensor | Operator of charge point `<n>`. |
-| `sensor.at_charging_station_favorite_location_<name>_connector_<n>_station_id` | Sensor | The charge point's own EvseID (diagnostic). |
+| `sensor.at_charging_station_favorite_location_<name>_<id>` | Sensor | State = number of currently available charge points at the site. Attributes: total charge point count, `available_by_plug_type`, derived site status, address, and a `connectors` list with each charge point's own status, raw registry status, power (kW), plug type, and price. |
+| `sensor.at_charging_station_favorite_location_<name>_<id>_available_<plug>` | Sensor | One per plug type present at the site (e.g. `..._available_ccs`): number of currently available charge points offering that plug type. Created automatically. |
+| `sensor.at_charging_station_favorite_location_<name>_<id>_status` | Sensor | Derived overall site status: available / occupied / **closed** (outside opening hours) / out of service. Localized state; raw `site_status` attribute for automations. |
+| `sensor.at_charging_station_favorite_location_<name>_<id>_connector_<n>_status` | Sensor | Current status of charge point `<n>` at the site. |
+| `sensor.at_charging_station_favorite_location_<name>_<id>_connector_<n>_power_kw` | Sensor | Charging power (kW) of charge point `<n>`. |
+| `sensor.at_charging_station_favorite_location_<name>_<id>_connector_<n>_price_ct_kwh` | Sensor | Ad-hoc price (cents per kWh) of charge point `<n>`. |
+| `sensor.at_charging_station_favorite_location_<name>_<id>_connector_<n>_plug_type` | Sensor | Plug type(s) of charge point `<n>`. |
+| `sensor.at_charging_station_favorite_location_<name>_<id>_connector_<n>_operator` | Sensor | Operator of charge point `<n>`. |
+| `sensor.at_charging_station_favorite_location_<name>_<id>_connector_<n>_station_id` | Sensor | The charge point's own EvseID (diagnostic). |
 
-One set of these six per charge point is created automatically. The [dashboard strategy](#dashboard) below renders the site's summary and per-charge-point state without you building a card by hand.
+`<name>` and `<id>` are as for a favorite charge point above (`sensor.at_charging_station_favorite_location_hauptbahnhof_linz_k7qa_connector_1_status`). One set of these six per charge point is created automatically. The [dashboard strategy](#dashboard) below renders the site's summary and per-charge-point state without you building a card by hand.
 
 Favorites (charge point or site) intentionally have no `geo_location` map marker — the radius overview already covers map display, so a favorite is tracked purely via its sensors, keeping the map free of clutter.
 
@@ -138,7 +142,7 @@ Afterwards the card appears in the card picker as **Austrian Charging Stations C
 
 ```yaml
 type: custom:austrian-charging-stations-card
-entity: sensor.at_charging_station_favorite_location_<name>  # or a single favorite's status sensor
+entity: sensor.at_charging_station_favorite_location_<name>_<id>  # or a single favorite's status sensor
 title: My charging site  # optional
 plug_types:  # optional: show only these plug families (multi-select in the visual editor)
   - CCS

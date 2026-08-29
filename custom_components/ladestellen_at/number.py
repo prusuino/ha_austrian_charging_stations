@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_MIN_POWER_KW, CONF_RADIUS_KM, DEFAULT_MIN_POWER_KW
-from .device import device_info
+from .device import device_info, entry_suffix
 from .localization import t
 
 
@@ -33,13 +33,15 @@ class MinPowerNumber(NumberEntity):
         self._attr_name = t("min_power_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_min_power_kw"
         self._attr_device_info = device_info(hass, entry)
-        # The suggested entity id carries the radius, like the availability
-        # sensor's does: a fixed id is shared by every radius entry, and Home
-        # Assistant resolves that by appending _2 to the second — so an
-        # automation copied between entries silently targets the wrong one.
+        # The suggested entity id carries the radius and the entry suffix,
+        # like the availability sensor's does: a fixed id is shared by every
+        # radius entry, and the radius alone is shared by two entries at
+        # different locations with the same radius — Home Assistant resolves
+        # either by appending _2 to the second, so an automation copied
+        # between entries silently targets the wrong one (see entry_suffix).
         # Applies on first creation only; existing entities keep their id.
         radius = entry.data.get(CONF_RADIUS_KM)
-        self.entity_id = f"number.at_charging_stations_min_power_kw_{round(radius)}km"
+        self.entity_id = f"number.at_charging_stations_min_power_kw_{round(radius)}km_{entry_suffix(entry)}"
 
     @property
     def native_value(self) -> float:

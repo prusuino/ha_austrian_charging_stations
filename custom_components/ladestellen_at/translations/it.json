@@ -53,10 +53,18 @@
         "data": {
           "favorite_name": "Nome personalizzato (facoltativo)"
         }
+      },
+      "reauth_confirm": {
+        "title": "Reinserisci la chiave API",
+        "description": "ladestellen.at ha rifiutato la chiave API salvata per {title}. Inserisci una nuova chiave — registrazione o rinnovo su admin.ladestellen.at → API con `homeassistant.local` come dominio autorizzato. La voce viene ricaricata con la nuova chiave; nient'altro cambia.",
+        "data": {
+          "api_key": "Chiave API (da admin.ladestellen.at)"
+        }
       }
     },
     "abort": {
-      "already_configured": "Questa combinazione di posizione/raggio o questo punto di ricarica è già configurato."
+      "already_configured": "Questa combinazione di posizione/raggio o questo punto di ricarica è già configurato.",
+      "reauth_successful": "La chiave API è stata aggiornata e la voce ricaricata."
     },
     "error": {
       "cannot_connect": "Impossibile raggiungere ladestellen.at.",

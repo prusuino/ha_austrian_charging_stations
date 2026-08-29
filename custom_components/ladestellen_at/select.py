@@ -25,7 +25,7 @@ from .const import (
     STATUS_OCCUPIED,
 )
 from .coordinator import LadestellenAtCoordinator
-from .device import device_info
+from .device import device_info, entry_suffix
 from .localization import t
 
 
@@ -45,9 +45,9 @@ async def async_setup_entry(
 class _FilterSelect(CoordinatorEntity[LadestellenAtCoordinator], SelectEntity):
     """Base class: stores the selection in the config entry's options.
 
-    The suggested entity ids carry the radius, like the availability
-    sensor's does (number.py explains why). First creation only; existing
-    entities keep their id."""
+    The suggested entity ids carry the radius and the entry suffix, like
+    the availability sensor's does (number.py explains why). First creation
+    only; existing entities keep their id."""
 
     _attr_has_entity_name = False
     _option_key: str
@@ -70,7 +70,7 @@ class PlugTypeSelect(_FilterSelect):
         self._attr_name = t("plug_type_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_plug_type"
         radius = entry.data.get(CONF_RADIUS_KM)
-        self.entity_id = f"select.at_charging_stations_plug_type_{round(radius)}km"
+        self.entity_id = f"select.at_charging_stations_plug_type_{round(radius)}km_{entry_suffix(entry)}"
 
     @property
     def options(self) -> list[str]:
@@ -99,7 +99,7 @@ class StatusSelect(_FilterSelect):
         self._attr_name = t("status_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_status"
         radius = entry.data.get(CONF_RADIUS_KM)
-        self.entity_id = f"select.at_charging_stations_status_{round(radius)}km"
+        self.entity_id = f"select.at_charging_stations_status_{round(radius)}km_{entry_suffix(entry)}"
 
     @property
     def options(self) -> list[str]:
@@ -140,7 +140,7 @@ class OperatorSelect(_FilterSelect):
         self._attr_name = t("operator_name", hass)
         self._attr_unique_id = f"{entry.entry_id}_operator"
         radius = entry.data.get(CONF_RADIUS_KM)
-        self.entity_id = f"select.at_charging_stations_operator_{round(radius)}km"
+        self.entity_id = f"select.at_charging_stations_operator_{round(radius)}km_{entry_suffix(entry)}"
 
     @property
     def options(self) -> list[str]:

@@ -53,10 +53,18 @@
         "data": {
           "favorite_name": "Custom name (optional)"
         }
+      },
+      "reauth_confirm": {
+        "title": "Re-enter API key",
+        "description": "ladestellen.at rejected the API key stored for {title}. Enter a new key — register or renew it at admin.ladestellen.at → API with `homeassistant.local` as the authorized domain. The entry is reloaded with the new key; nothing else changes.",
+        "data": {
+          "api_key": "API key (from admin.ladestellen.at)"
+        }
       }
     },
     "abort": {
-      "already_configured": "This location/radius or charge point is already configured."
+      "already_configured": "This location/radius or charge point is already configured.",
+      "reauth_successful": "The API key was updated and the entry reloaded."
     },
     "error": {
       "cannot_connect": "ladestellen.at could not be reached.",

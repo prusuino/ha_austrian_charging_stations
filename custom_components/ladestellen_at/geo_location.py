@@ -125,6 +125,16 @@ async def async_setup_entry(
 
         for location_id in [e for e in known_entities if e not in locations]:
             entity = known_entities.pop(location_id)
+            # The entity registry row is kept on purpose — only the entity
+            # is removed, unlike a per-plug-type sensor deselected in the
+            # Configure dialog (sensor.py), which drops its registry row too.
+            # A site leaves the filtered set as often as it re-enters it (a
+            # filter flipped on the dashboard, its last connector going out
+            # of service, a data hiccup), and the row is what brings the
+            # marker back under the same entity id, with its history and
+            # whatever the user changed on it (name, visibility, area).
+            # Until then Home Assistant lists the row as "no longer
+            # provided", which is accurate.
             hass.async_create_task(entity.async_remove(force_remove=True))
 
     entry.async_on_unload(coordinator.async_add_listener(_sync_entities))

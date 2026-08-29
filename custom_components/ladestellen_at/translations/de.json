@@ -53,10 +53,18 @@
         "data": {
           "favorite_name": "Eigener Name (optional)"
         }
+      },
+      "reauth_confirm": {
+        "title": "API-Key neu eingeben",
+        "description": "ladestellen.at hat den für {title} gespeicherten API-Key abgelehnt. Gib einen neuen Key ein — Registrierung bzw. Erneuerung unter admin.ladestellen.at → API mit `homeassistant.local` als berechtigter Domain. Der Eintrag wird mit dem neuen Key neu geladen; sonst ändert sich nichts.",
+        "data": {
+          "api_key": "API-Key (von admin.ladestellen.at)"
+        }
       }
     },
     "abort": {
-      "already_configured": "Diese Standort-/Umkreis-Kombination oder dieser Ladepunkt ist bereits konfiguriert."
+      "already_configured": "Diese Standort-/Umkreis-Kombination oder dieser Ladepunkt ist bereits konfiguriert.",
+      "reauth_successful": "Der API-Key wurde aktualisiert und der Eintrag neu geladen."
     },
     "error": {
       "cannot_connect": "ladestellen.at konnte nicht erreicht werden.",
