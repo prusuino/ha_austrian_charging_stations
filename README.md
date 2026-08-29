@@ -57,7 +57,7 @@ The registry reports connector types in two coexisting vocabularies (legacy keys
 | `sensor.at_charging_station_favorite_<name>_operator` | Sensor | The charge point's operator. |
 | `sensor.at_charging_station_favorite_<name>_station_id` | Sensor | The charge point's EvseID (diagnostic). |
 
-A pre-filled card listing all six is also added automatically to a "Favorites" view on the [automatic dashboard](#automatic-dashboard).
+The [dashboard strategy](#dashboard) below lays all six out for you, without you building a card by hand.
 
 ### Favorite site
 
@@ -73,7 +73,7 @@ A pre-filled card listing all six is also added automatically to a "Favorites" v
 | `sensor.at_charging_station_favorite_location_<name>_connector_<n>_operator` | Sensor | Operator of charge point `<n>`. |
 | `sensor.at_charging_station_favorite_location_<name>_connector_<n>_station_id` | Sensor | The charge point's own EvseID (diagnostic). |
 
-One set of these six per charge point is created automatically. A pre-filled card listing all of them is also added automatically to a "Favorites" view on the [automatic dashboard](#automatic-dashboard).
+One set of these six per charge point is created automatically. The [dashboard strategy](#dashboard) below renders the site's summary and per-charge-point state without you building a card by hand.
 
 Favorites (charge point or site) intentionally have no `geo_location` map marker — the radius overview already covers map display, so a favorite is tracked purely via its sensors, keeping the map free of clutter.
 
@@ -92,9 +92,22 @@ Each badge can be hidden individually via the visual editor (`hidden_badges` in 
 
 It works for both favorite kinds: a whole site shows one box per charge point; a single favorite shows one box.
 
-![Favorite sites shown with the bundled card (status boxes per charge point) above the auto-generated entities list with per-plug-family availability, status, and opening hours](docs/card-example.png)
+![Favorite sites shown with the bundled card (status boxes per charge point) above the site's entities: per-plug-family availability, status, and opening hours](docs/card-example.png)
 
-The card registers itself automatically (no manual resource setup) and is used on the auto-generated "Favorites" dashboard view. It is also available in the card picker as **Austrian Charging Stations Card** for use anywhere else, with a visual editor for all options:
+### Adding the card as a resource
+
+The integration serves the card file, but registering it as a Lovelace resource is left to you — the resource list is part of your dashboard configuration, and an integration has no business writing into it. It is a one-time step:
+
+**Settings → Dashboards → ⋮ (top right) → Resources → + Add resource**
+
+| Field | Value |
+|---|---|
+| URL | `/ladestellen_at_files/austrian-charging-stations-card.js` |
+| Resource type | JavaScript module |
+
+Then reload the page (Ctrl/Cmd+Shift+R). The same file also contains the [dashboard strategy](#dashboard), so this one resource covers both.
+
+Afterwards the card appears in the card picker as **Austrian Charging Stations Card**, with a visual editor for all options:
 
 ```yaml
 type: custom:austrian-charging-stations-card
@@ -106,19 +119,40 @@ hidden_badges:  # optional: hide individual header badges (availability / renewa
   - availability
 ```
 
-With a `plug_types` filter, boxes of other plug families are hidden and the availability badge counts only the visible charge points. The filter is purely visual — the favorite, its sensors, and the dashboard entities list keep covering the whole site.
+With a `plug_types` filter, boxes of other plug families are hidden and the availability badge counts only the visible charge points. The filter is purely visual — the favorite and its sensors keep covering the whole site.
 
 ## Language
 
 Entity names, the device name, and the dropdown filter values adapt automatically to your Home Assistant language setting — German, English, French, and Italian are supported, with English as the fallback for any other language. Plug family and operator names from the source data are shown as-is.
 
-## Automatic dashboard
+## Dashboard
 
-On first setup, the integration automatically creates a **"Charging Stations AT"** dashboard (title localized to your HA language) with a full-screen native Home Assistant Map card, already configured to display each site's availability directly on its marker. This only happens once: if you later customize or delete that dashboard yourself, the integration won't touch or re-create it. Note that after deleting it, its sidebar entry disappears with the next restart (a Home Assistant limitation for integration-registered panels).
+The integration ships a **dashboard strategy**: a recipe Home Assistant renders in the browser, rather than a dashboard written into your configuration. Nothing is stored, nothing is overwritten, and the result follows your setup — add a favorite and it appears on the next page load; delete one and it is gone, with no leftover card.
 
-![The auto-generated dashboard map: one marker per charging site, labeled with live availability](docs/map-example.png)
+Requires the card [registered as a resource](#adding-the-card-as-a-resource) (the strategy ships in the same file). Then:
 
-Favoriting a charge point or a whole site adds a second view, **"Favorites"**, to that same dashboard with a pre-filled Entities card per favorite — feel free to edit or delete it, though it's kept in sync with the favorite's current charge points on every restart.
+1. **Settings → Dashboards → + Add dashboard → New dashboard from scratch**, give it a name.
+2. Open it, then **✏️ (edit) → ⋮ → Raw configuration editor**.
+3. Replace the entire content with:
+
+```yaml
+strategy:
+  type: custom:austrian-charging-stations
+views: []
+```
+
+4. Save.
+
+You get:
+
+- a **Map** view — every site in range on a full-screen map, each marker labeled with its live availability (only shown when a radius search is configured);
+- a **Charging stations** view — the radius search with its filter controls first, then one section per favorite: the bundled card with its per-charge-point status boxes, plus that favorite's headline sensors as tiles.
+
+![The strategy's map view: one marker per charging site, labeled with live availability](docs/map-example.png)
+
+The strategy also appears under **+ Add dashboard** as *Austrian Charging Stations*, which does the same thing without the raw editor.
+
+Everything the strategy produces is a normal Home Assistant dashboard. If you would rather arrange things yourself, build your own dashboard with the bundled card and the entities above — the strategy is an offer, not a requirement.
 
 ## Installation
 
@@ -141,6 +175,8 @@ Favoriting a charge point or a whole site adds a second view, **"Favorites"**, t
 4. Choose a mode:
    - **Radius overview**: enter your API key; latitude/longitude default to your Home Assistant home location, set the radius (km). Done — add the integration again for a different location or radius. Adjust the filters afterwards via the `number`/`select` entities.
    - **Favorite charge point**: enter the charge point's EvseID directly (printed on the charger, e.g. `AT*DAE*E0002115`), or leave it empty and search near a location instead — optionally narrowed by minimum power and plug family — then pick one from the resulting list. The list also includes whole sites (marked with 📍 and their charge point count) alongside individual charge points — pick one of those instead to favorite the entire site. Add the integration again for another favorite.
+
+5. Optional: register the [bundled card](#adding-the-card-as-a-resource) as a resource and set up the [dashboard](#dashboard). The integration works fully without it — this only saves you building the cards yourself.
 
 ## Notes
 

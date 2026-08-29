@@ -41,7 +41,6 @@ from .coordinator import (
     site_status,
     weekly_opening_periods,
 )
-from .dashboard import async_add_location_card
 from .device import device_info
 from .localization import localized_site_status, localized_status, t, weekday_short
 
@@ -54,8 +53,7 @@ def _opening_hours_display(data: dict, hass) -> str | None:
     Sa 07:30–18:00', or '24 h geöffnet') — None when the source has no
     schedule data for this site. Consecutive weekdays with identical hours
     are collapsed into a range; days the schedule omits are closed and left
-    out. Rendered by the bundled card below the address and as a row on the
-    auto-generated dashboard card."""
+    out. Rendered by the bundled card below the address."""
     if data.get("open_24h"):
         return t("opening_24h", hass)
     week = weekly_opening_periods(data.get("opening_times"))
@@ -92,32 +90,6 @@ async def async_setup_entry(
         id_sensor = FavoriteStationIdSensor(hass, coordinator, entry)
         async_add_entities([status_sensor, power_sensor, price_sensor, plug_sensor, operator_sensor, id_sensor])
 
-        site_name = _favorite_name(entry, coordinator.data or {})
-        card = {
-            "type": "vertical-stack",
-            "cards": [
-                {"type": "custom:austrian-charging-stations-card", "entity": status_sensor.entity_id, "title": site_name},
-                {
-                    "type": "entities",
-                    "entities": [
-                        {"entity": status_sensor.entity_id, "name": t("favorite_status_name", hass)},
-                        {
-                            "type": "attribute",
-                            "entity": status_sensor.entity_id,
-                            "attribute": "opening_hours_text",
-                            "name": t("opening_hours_row_name", hass),
-                            "icon": "mdi:clock-outline",
-                        },
-                        {"entity": power_sensor.entity_id, "name": t("favorite_power_name", hass)},
-                        {"entity": price_sensor.entity_id, "name": t("favorite_price_name", hass)},
-                        {"entity": plug_sensor.entity_id, "name": t("favorite_plug_type_name", hass)},
-                        {"entity": operator_sensor.entity_id, "name": t("favorite_operator_name", hass)},
-                        {"entity": id_sensor.entity_id, "name": t("favorite_station_id_name", hass)},
-                    ],
-                },
-            ],
-        }
-        hass.async_create_task(_async_add_dashboard_card(hass, entry, site_name, card))
         return
 
     if entry_type == ENTRY_TYPE_FAVORITE_LOCATION:
@@ -130,11 +102,9 @@ async def async_setup_entry(
 
         known_connectors: dict[str, list] = {}
         known_plug_sensors: dict[str, FavoriteLocationPlugAvailableSensor] = {}
-        dashboard_card_added = False
 
         @callback
         def _sync_connector_entities() -> None:
-            nonlocal dashboard_card_added
             connectors = (location_coordinator.data or {}).get("connectors", {})
 
             new_evse_ids = [evse_id for evse_id in connectors if evse_id not in known_connectors]
@@ -190,26 +160,6 @@ async def async_setup_entry(
             for plug_type in [p for p in known_plug_sensors if p not in plug_types]:
                 hass.async_create_task(known_plug_sensors.pop(plug_type).async_remove(force_remove=True))
 
-            if not dashboard_card_added and known_connectors:
-                dashboard_card_added = True
-                card = {
-                    "type": "vertical-stack",
-                    "cards": [
-                        {
-                            "type": "custom:austrian-charging-stations-card",
-                            "entity": summary_sensor.entity_id,
-                            "title": site_name,
-                        },
-                        {
-                            "type": "entities",
-                            "entities": _build_location_card_entities(
-                                hass, known_connectors, known_plug_sensors, summary_sensor, status_sensor
-                            ),
-                        },
-                    ],
-                }
-                hass.async_create_task(_async_add_dashboard_card(hass, entry, site_name, card))
-
         entry.async_on_unload(location_coordinator.async_add_listener(_sync_connector_entities))
         _sync_connector_entities()
         return
@@ -255,62 +205,6 @@ async def async_setup_entry(
 
     entry.async_on_unload(entry.add_update_listener(_options_updated))
     _sync_plug_type_sensors()
-
-
-async def _async_add_dashboard_card(hass: HomeAssistant, entry: ConfigEntry, title: str, card: dict) -> None:
-    """Add/refresh one favorite's card on the favorites dashboard. Best-effort
-    — a dashboard problem must never break the sensors themselves."""
-    try:
-        await async_add_location_card(hass, entry, card)
-    except Exception:  # noqa: BLE001 - dashboard setup must never break the integration
-        _LOGGER.exception("Automatic favorites-dashboard card setup failed for %s", title)
-
-
-def _build_location_card_entities(
-    hass: HomeAssistant,
-    known_connectors: dict[str, list],
-    known_plug_sensors: dict[str, "FavoriteLocationPlugAvailableSensor"],
-    summary_sensor,
-    status_sensor,
-) -> list[dict]:
-    entities = [
-        {"entity": summary_sensor.entity_id, "name": t("favorite_location_available_name", hass)},
-    ]
-    # Per-plug-type available counts, directly below the overall count they
-    # break down. Also shown for single-type sites, where the row nominally
-    # repeats the overall count: naming the plug type makes the card easier
-    # to understand at a glance (user request).
-    for plug_type in sorted(known_plug_sensors):
-        entities.append(
-            {
-                "entity": known_plug_sensors[plug_type].entity_id,
-                "name": t(
-                    "favorite_location_available_plug_name",
-                    hass,
-                    plug=PLUG_TYPE_SHORT_LABELS.get(plug_type, plug_type),
-                ),
-            }
-        )
-    entities.append({"entity": status_sensor.entity_id, "name": t("favorite_status_name", hass)})
-    entities.append(
-        {
-            "type": "attribute",
-            "entity": summary_sensor.entity_id,
-            "attribute": "opening_hours_text",
-            "name": t("opening_hours_row_name", hass),
-            "icon": "mdi:clock-outline",
-        }
-    )
-    for index, evse_id in enumerate(sorted(known_connectors), start=1):
-        status_entity, power_entity, price_entity, plug_entity, operator_entity, id_entity = known_connectors[evse_id]
-        entities.append({"type": "section", "label": t("favorite_location_connector_prefix", hass, n=index)})
-        entities.append({"entity": status_entity.entity_id, "name": t("favorite_status_name", hass)})
-        entities.append({"entity": power_entity.entity_id, "name": t("favorite_power_name", hass)})
-        entities.append({"entity": price_entity.entity_id, "name": t("favorite_price_name", hass)})
-        entities.append({"entity": plug_entity.entity_id, "name": t("favorite_plug_type_name", hass)})
-        entities.append({"entity": operator_entity.entity_id, "name": t("favorite_operator_name", hass)})
-        entities.append({"entity": id_entity.entity_id, "name": t("favorite_station_id_name", hass)})
-    return entities
 
 
 class ChargingStationsFreeSensor(CoordinatorEntity[LadestellenAtCoordinator], SensorEntity):
@@ -669,7 +563,8 @@ class FavoriteLocationSensor(CoordinatorEntity[FavoriteLocationCoordinator], Sen
             "open_24h": location.get("open_24h"),
             # opening_hours stays None without schedule data (the card omits
             # the line then); opening_hours_text falls back to a localized
-            # "Unknown" for the dashboard row, which can't express a fallback.
+            # "Unknown" for use where a missing value cannot be expressed,
+            # e.g. as a plain entity attribute on a dashboard.
             "opening_hours": _opening_hours_display(location, self._hass_ref),
             "opening_hours_text": _opening_hours_display(location, self._hass_ref)
             or t("opening_unknown", self._hass_ref),

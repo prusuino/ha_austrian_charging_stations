@@ -1,9 +1,6 @@
 {
   "domain": "ladestellen_at",
   "name": "Austrian Charging Stations (ladestellen.at)",
-  "after_dependencies": [
-    "lovelace"
-  ],
   "codeowners": [
     "@prusuino"
   ],
@@ -16,5 +13,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/prusuino/ha_austrian_charging_stations/issues",
   "requirements": [],
-  "version": "1.1.4"
+  "version": "1.2.0"
 }

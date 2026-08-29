@@ -98,11 +98,10 @@ class ChargingSiteEvent(GeolocationEvent):
     _attr_has_entity_name = False
     # Hidden from Home Assistant's auto-generated default dashboard map (which
     # otherwise draws every geo_location entity in the system) — still shown
-    # on this integration's own dedicated map card, which references entities
-    # by source/state directly rather than through the visible-by-default list.
-    # visible_default only applies to entities registered for the first time;
-    # async_added_to_hass below covers entities that already existed in the
-    # registry from before this was introduced.
+    # on a Map card that references them by source, which does not go through
+    # the visible-by-default list. This applies to entities registered for the
+    # first time; whether an existing entity stays hidden is the user's
+    # decision alone and is never rewritten from here.
     _attr_entity_registry_visible_default = False
 
     def __init__(self, hass: HomeAssistant, location_id: str, location: dict) -> None:
@@ -118,18 +117,6 @@ class ChargingSiteEvent(GeolocationEvent):
         self._attr_latitude = location.get("latitude")
         self._attr_longitude = location.get("longitude")
         self._attr_distance = location.get("distance_km")
-
-    async def async_added_to_hass(self) -> None:
-        await super().async_added_to_hass()
-        # Retroactively hide entities that were already in the registry
-        # before entity_registry_visible_default existed here — that
-        # attribute only takes effect for entities registered for the first
-        # time. Only touches entries with no hidden_by set yet, so it never
-        # overrides a user's own explicit show/hide choice.
-        registry = er.async_get(self.hass)
-        entry = registry.async_get(self.entity_id)
-        if entry is not None and entry.hidden_by is None:
-            registry.async_update_entity(self.entity_id, hidden_by=er.RegistryEntryHider.INTEGRATION)
 
     @callback
     def update_location(self, location: dict) -> None:

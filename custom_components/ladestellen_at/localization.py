@@ -1,8 +1,8 @@
-"""Runtime string localization (entity names, dashboard content, select options).
+"""Runtime string localization (entity names, card content, select options).
 
 Home Assistant's built-in translation system (strings.json / translations/*.json)
-only covers config/options flow text. Entity names, the auto-generated dashboard,
-and select option values are set directly by this integration's Python code and
+only covers config/options flow text. Entity names, card content, and select
+option values are set directly by this integration's Python code and
 are not covered by that mechanism, so we do our own minimal lookup here, keyed
 by hass.config.language. Falls back to English for any language we don't have
 strings for.
@@ -73,18 +73,6 @@ STRINGS: dict[str, dict[str, str]] = {
         "en": "Charging Stations Free {plug}",
         "fr": "Bornes de recharge libres {plug}",
         "it": "Stazioni di ricarica libere {plug}",
-    },
-    "dashboard_title": {
-        "de": "Ladestationen AT",
-        "en": "Charging Stations AT",
-        "fr": "Bornes de recharge AT",
-        "it": "Stazioni di ricarica AT",
-    },
-    "map_card_title": {
-        "de": "Ladestationen Österreich",
-        "en": "Charging Stations Austria",
-        "fr": "Bornes de recharge Autriche",
-        "it": "Stazioni di ricarica Austria",
     },
     "station_entity_prefix": {
         "de": "Ladestation",
@@ -242,12 +230,6 @@ STRINGS: dict[str, dict[str, str]] = {
         "fr": "Point de charge {n}",
         "it": "Punto di ricarica {n}",
     },
-    "favorites_view_title": {
-        "de": "Favoriten",
-        "en": "Favorites",
-        "fr": "Favoris",
-        "it": "Preferiti",
-    },
     "favorite_scope_site": {
         "de": "Ganzen Standort favorisieren ({count} Ladepunkte)",
         "en": "Favorite the whole site ({count} charge points)",
@@ -277,12 +259,6 @@ STRINGS: dict[str, dict[str, str]] = {
         "en": "Open 24 h",
         "fr": "Ouvert 24 h/24",
         "it": "Aperto 24 ore su 24",
-    },
-    "opening_hours_row_name": {
-        "de": "Öffnungszeiten",
-        "en": "Opening hours",
-        "fr": "Horaires d'ouverture",
-        "it": "Orari di apertura",
     },
     "opening_unknown": {
         "de": "Unbekannt",

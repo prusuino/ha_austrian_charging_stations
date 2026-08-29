@@ -1,7 +1,12 @@
 /* austrian-charging-stations-card — colored per-connector status boxes for a
  * favorite charging station or a whole favorite site (green = available,
- * red = occupied, gray = out of service). Ships with the integration;
- * registered as a Lovelace resource automatically, no manual setup required.
+ * red = occupied, gray = out of service).
+ *
+ * Ships with the integration, which serves this file at
+ * /ladestellen_at_files/austrian-charging-stations-card.js. Add it once as a
+ * Lovelace resource (Settings → Dashboards → Resources, type "JavaScript
+ * module"); the README has the steps. The same file also carries the
+ * dashboard strategy at the bottom, so that one resource covers both.
  *
  * Config:
  *   type: custom:austrian-charging-stations-card
@@ -486,3 +491,359 @@ window.customCards.push({
     "Colored per-connector status boxes for a favorite charging station or site (ladestellen.at).",
   preview: true,
 });
+
+/* ===================================================================== */
+/* Everything below is the dashboard strategy — self-contained and kept   */
+/* inside an IIFE so its names never collide with another integration     */
+/* shipping the same core in the global scope.                            */
+/* ===================================================================== */
+(() => {
+/* =====================================================================
+ * Dashboard strategy core — shared building blocks
+ * =====================================================================
+ * A Lovelace dashboard strategy generates a dashboard in the browser at
+ * render time. Nothing is written to .storage: the dashboard belongs to
+ * the user, the integration only supplies the recipe.
+ *
+ * ⚠️ This block is duplicated into every integration that ships a
+ * strategy. Each integration is its own HACS repository and must not
+ * depend on another one being installed, so a shared file is not an
+ * option. Keep the copies in sync and bump CORE_VERSION when the shared
+ * part changes — it identifies which revision a copy was taken from.
+ * ===================================================================== */
+
+const CORE_VERSION = "1.0.1";
+
+/* --- Registry access -------------------------------------------------
+ * The registries are the only reliable way to find an integration's
+ * entities: entity_id patterns are user-editable, unique_id is not.
+ * Both calls are cheap and cached by the frontend for the render pass.
+ */
+async function loadRegistry(hass) {
+  const [entities, devices] = await Promise.all([
+    hass.callWS({ type: "config/entity_registry/list" }),
+    hass.callWS({ type: "config/device_registry/list" }),
+  ]);
+  return { entities, devices };
+}
+
+/** All registry entries belonging to one integration (platform == domain). */
+function entriesOfDomain(entities, domain) {
+  return entities.filter((e) => e.platform === domain && !e.disabled_by);
+}
+
+/** Registry entries of one config entry, keyed by unique_id suffix.
+ *  Mirrors the `f"{entry_id}_{suffix}"` convention the integrations use. */
+function bySuffix(entities, configEntryId) {
+  const out = {};
+  const prefix = `${configEntryId}_`;
+  for (const e of entities) {
+    if (e.config_entry_id !== configEntryId) continue;
+    if (typeof e.unique_id === "string" && e.unique_id.startsWith(prefix)) {
+      out[e.unique_id.slice(prefix.length)] = e.entity_id;
+    }
+  }
+  return out;
+}
+
+/** Group an integration's entities by the device they belong to.
+ *  Returns [{device, entities:[registryEntry,...]}] sorted by device name. */
+function groupByDevice(domainEntries, devices) {
+  const byId = new Map(devices.map((d) => [d.id, d]));
+  const groups = new Map();
+  for (const e of domainEntries) {
+    if (!e.device_id) continue;
+    if (!groups.has(e.device_id)) groups.set(e.device_id, []);
+    groups.get(e.device_id).push(e);
+  }
+  return [...groups.entries()]
+    .map(([id, list]) => ({ device: byId.get(id), entities: list }))
+    .filter((g) => g.device)
+    .sort((a, b) => deviceName(a.device).localeCompare(deviceName(b.device)));
+}
+
+function deviceName(device) {
+  return device.name_by_user || device.name || "";
+}
+
+/* --- Card helpers ---------------------------------------------------- */
+
+const heading = (text, icon, badges) => {
+  const card = { type: "heading", heading: text };
+  if (icon) card.icon = icon;
+  if (badges && badges.length) card.badges = badges;
+  return card;
+};
+
+const grid = (cards, columnSpan) => {
+  const section = { type: "grid", cards: cards.filter(Boolean) };
+  if (columnSpan) section.column_span = columnSpan;
+  return section;
+};
+
+const tile = (entity, extra = {}) => ({ type: "tile", entity, ...extra });
+
+/** Map card fed from the integration's geo_location source.
+ *  Deliberately uses geo_location_sources instead of an entity list: the
+ *  markers are hidden entities, and the source keeps working when the
+ *  set of markers changes between renders.
+ *  labelAttribute writes the marker label into the source object, which is
+ *  where the map card reads a geo-location source's label config from — the
+ *  card-level label_mode only applies to `entities`. */
+const mapCard = (domain, opts = {}) => ({
+  type: "map",
+  geo_location_sources: [
+    opts.labelAttribute
+      ? { source: domain, label_mode: "attribute", attribute: opts.labelAttribute }
+      : domain,
+  ],
+  entities: opts.entities || ["zone.home"],
+  default_zoom: opts.zoom ?? 8,
+  theme_mode: "auto",
+  grid_options: { columns: 12, rows: opts.rows ?? 6 },
+});
+
+/** Shown instead of an empty dashboard — an empty dashboard looks broken
+ *  and gives the user nothing to act on. */
+const emptyNotice = (text) => ({
+  type: "markdown",
+  content: text,
+});
+
+/* --- Localisation ----------------------------------------------------
+ * Strategies run in the frontend, so hass.language is authoritative.
+ * Falls back to English for any language the integration does not ship.
+ */
+function translator(strings, hass) {
+  const lang = (hass.language || "en").split("-")[0];
+  const table = strings[lang] || strings.en;
+  return (key) => (table && table[key]) || (strings.en && strings.en[key]) || key;
+}
+
+/* --- Strategy base ---------------------------------------------------
+ * Wraps the parts every strategy repeats: load registries, bail out
+ * gracefully when the integration is not set up, and hand the concrete
+ * strategy a prepared context.
+ */
+function defineDashboardStrategy(name, { domain, title, icon, build, strings, description }) {
+  class Strategy extends HTMLElement {
+    static async generate(config, hass) {
+      const t = translator(strings || {}, hass);
+      let registry;
+      try {
+        registry = await loadRegistry(hass);
+      } catch (err) {
+        // Registry unreachable: render a readable message rather than
+        // letting the dashboard fail with a blank screen.
+        return {
+          title: title,
+          views: [{ title: title, cards: [emptyNotice(`⚠️ ${err}`)] }],
+        };
+      }
+      const domainEntries = entriesOfDomain(registry.entities, domain);
+      if (!domainEntries.length) {
+        return {
+          title: title,
+          views: [
+            {
+              title: title,
+              icon,
+              cards: [emptyNotice(t("not_configured"))],
+            },
+          ],
+        };
+      }
+      const views = await build({
+        hass,
+        config,
+        t,
+        domain,
+        entities: domainEntries,
+        devices: registry.devices,
+        allEntities: registry.entities,
+        helpers: { heading, grid, tile, mapCard, emptyNotice, bySuffix, groupByDevice, deviceName },
+      });
+      return { title, views };
+    }
+  }
+  // getCreateSuggestions lets Home Assistant offer sensible defaults when the
+  // strategy is picked from the "new dashboard" dialog.
+  Strategy.getCreateSuggestions = () => ({ title, icon });
+
+  customElements.define(`ll-strategy-dashboard-${name}`, Strategy);
+
+  // Announce the strategy to the frontend so it appears in the dashboard
+  // creation dialog instead of having to be typed into the raw editor.
+  window.customStrategies = window.customStrategies || [];
+  if (!window.customStrategies.some((s) => s.type === name)) {
+    window.customStrategies.push({
+      type: name,
+      strategyType: "dashboard",
+      name: title,
+      description: description || "",
+    });
+  }
+  return Strategy;
+}
+
+/* =====================================================================
+ * Dashboard strategy: Austrian Charging Stations
+ * =====================================================================
+ * Generates the dashboard in the browser at render time. Earlier versions
+ * created a dashboard in the user's Lovelace storage and kept a card per
+ * favorite in sync with it; a strategy produces the same layout without
+ * writing anything into the user's configuration.
+ *
+ * It also keeps itself current: adding or removing a favorite changes the
+ * dashboard on the next load, with no card to sync and no leftovers when a
+ * favorite is deleted.
+ *
+ * Usage — create an empty dashboard, open the raw configuration editor and
+ * replace its content with:
+ *
+ *     strategy:
+ *       type: custom:austrian-charging-stations
+ *     views: []
+ * ===================================================================== */
+
+const ACS_STRINGS = {
+  en: {
+    stations: "Charging stations",
+    map: "Map",
+    not_configured:
+      "### Austrian Charging Stations is not set up yet\n\nAdd the integration under **Settings → Devices & services** first. This dashboard then fills itself — there is nothing to configure here.",
+  },
+  de: {
+    stations: "Ladestationen",
+    map: "Karte",
+    not_configured:
+      "### Austrian Charging Stations ist noch nicht eingerichtet\n\nFüge die Integration zuerst unter **Einstellungen → Geräte & Dienste** hinzu. Dieses Dashboard füllt sich danach von selbst — hier ist nichts einzustellen.",
+  },
+  fr: {
+    stations: "Bornes de recharge",
+    map: "Carte",
+    not_configured:
+      "### Austrian Charging Stations n'est pas encore configuré\n\nAjoutez d'abord l'intégration sous **Paramètres → Appareils et services**. Ce tableau de bord se remplit ensuite tout seul.",
+  },
+  it: {
+    stations: "Stazioni di ricarica",
+    map: "Mappa",
+    not_configured:
+      "### Austrian Charging Stations non è ancora configurato\n\nAggiungi prima l'integrazione in **Impostazioni → Dispositivi e servizi**. Questa dashboard si riempie poi da sola.",
+  },
+};
+
+/* unique_id suffixes carrying a favorite's headline values. Everything else
+ * a favorite produces is per-connector detail, which the bundled card below
+ * already renders as status boxes — repeating it as tiles would bury the
+ * summary. Mirrors the unique_id scheme of the sensor platform. */
+const ACS_SUMMARY_SUFFIXES = new Set([
+  "free",
+  "available",
+  "status",
+  "site_status",
+  "price",
+  "power",
+  "plug_type",
+  "operator",
+  "station_id",
+]);
+
+const ACS_isSummary = (suffix) =>
+  ACS_SUMMARY_SUFFIXES.has(suffix) ||
+  suffix.startsWith("free_") ||
+  suffix.startsWith("available_");
+
+defineDashboardStrategy("austrian-charging-stations", {
+  domain: "ladestellen_at",
+  title: "Austrian Charging Stations",
+  icon: "mdi:ev-station",
+  description: "Map of every charging station in range plus one section per favorite, generated live from the integration.",
+  strings: ACS_STRINGS,
+
+  async build({ t, domain, entities, devices, allEntities, helpers }) {
+    const { heading, grid, tile, mapCard, groupByDevice, deviceName, bySuffix } = helpers;
+    const views = [];
+
+    // --- Map ----------------------------------------------------------
+    // The markers come from the radius entry; a setup with favorites only
+    // has none, and an empty map would just look broken.
+    const hasMarkers = entities.some((e) => e.entity_id.startsWith("geo_location."));
+    if (hasMarkers) {
+      views.push({
+        title: t("map"),
+        path: "map",
+        icon: "mdi:map-marker-radius",
+        type: "panel",
+        cards: [mapCard(domain, { zoom: 11, rows: 12, labelAttribute: "status" })],
+      });
+    }
+
+    // --- One section per config entry ---------------------------------
+    // Each entry (the radius search and every favorite) is its own device,
+    // so grouping by device gives exactly one section per entry.
+    // The radius search goes first — it is the entry point, and its filter
+    // entities are what a user reaches for. Favorites follow, alphabetically
+    // as groupByDevice already returns them.
+    const sections = [];
+    const searchSections = [];
+    for (const group of groupByDevice(entities, devices)) {
+      const name = deviceName(group.device);
+      const entryId = group.entities.find((e) => e.config_entry_id)?.config_entry_id;
+      const ids = entryId ? bySuffix(allEntities, entryId) : {};
+
+      // A favorite is driven by its status (single charge point) or its
+      // available count (whole site). The radius entry carries the same two
+      // suffixes as *filter* entities (select/number), which the bundled
+      // card cannot render — hence the explicit sensor check.
+      const cardEntity = [ids.status, ids.available].find(
+        (entityId) => typeof entityId === "string" && entityId.startsWith("sensor.")
+      );
+
+      const cards = [heading(name, "mdi:ev-station")];
+      if (cardEntity) {
+        cards.push({ type: "custom:austrian-charging-stations-card", entity: cardEntity, title: name });
+      }
+
+      // Alongside the card only the headline values; without a card (the
+      // radius entry) everything the entry offers, filters included.
+      const summaryIds = new Set(
+        Object.entries(ids)
+          .filter(([suffix]) => ACS_isSummary(suffix))
+          .map(([, entityId]) => entityId)
+      );
+      cards.push(
+        ...group.entities
+          .filter(
+            (e) =>
+              !e.hidden_by &&
+              !e.entity_id.startsWith("geo_location.") &&
+              e.entity_id !== cardEntity &&
+              (cardEntity ? summaryIds.has(e.entity_id) : true)
+          )
+          .map((e) => e.entity_id)
+          // Registry order is not stable — sort so the layout does not
+          // reshuffle between reloads.
+          .sort()
+          .map((entityId) => tile(entityId, { grid_options: { columns: 6 } }))
+      );
+
+      (cardEntity ? sections : searchSections).push(grid(cards));
+    }
+    sections.unshift(...searchSections);
+
+    if (sections.length) {
+      views.push({
+        title: t("stations"),
+        path: "stations",
+        icon: "mdi:star",
+        type: "sections",
+        max_columns: 2,
+        sections,
+      });
+    }
+
+    return views;
+  },
+});
+})();
