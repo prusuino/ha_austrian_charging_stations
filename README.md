@@ -231,7 +231,7 @@ That view is regenerated like the full dashboard is, so new config entries still
 
 2. Restart Home Assistant.
 
-Until the integration shows up in the HACS search, the button above adds it as a custom repository.
+The integration is listed in the HACS default store, so no custom repository is needed.
 
 ### Manual
 
