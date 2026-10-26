@@ -1,5 +1,7 @@
 {
   "name": "Austrian Charging Stations (ladestellen.at)",
+  "zip_release": true,
+  "filename": "ladestellen_at.zip",
   "render_readme": true,
   "homeassistant": "2025.4.0"
 }
