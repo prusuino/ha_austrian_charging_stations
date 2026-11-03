@@ -123,7 +123,7 @@ Each badge can be hidden individually via the visual editor (`hidden_badges` in 
 
 It works for both favorite kinds: a whole site shows one box per charge point; a single favorite shows one box.
 
-![Favorite sites shown with the bundled card (status boxes per charge point) above the site's entities: per-plug-family availability, status, and opening hours](docs/card-example.png)
+![Favorite sites shown with the bundled card, status boxes per charge point, above the site's entities: per-plug-family availability, status, and opening hours](docs/card-example.png)
 
 ### Adding the card as a resource
 
