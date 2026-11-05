@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.1 — 2026-11-05
+
+- **Maintenance release for the Home Assistant Marketplace.** Home Assistant 2026.11 replaces HACS with the built-in Marketplace (Settings → Marketplace); the README now describes installation and updates through it. The release ships the integration as a zip asset, which the Marketplace (and HACS) download in one piece.
+- Internal: `DeviceInfo` is imported from the device registry helper and config-flow results are typed as `ConfigFlowResult`, following current Home Assistant conventions. No behaviour changes.
+- No functional changes. Existing entities, their ids and your configuration are unchanged.
+
 ## 1.4.0 — 2026-08-29
 
 - **New: re-authentication when the API key stops working.** If ladestellen.at rejects the stored key (revoked, expired, re-registered for another domain), the entry no longer just keeps retrying: Home Assistant now shows a re-authentication notification under Settings → Devices & services asking for the new key. The key is checked with the same request the entry makes on every refresh, stored, and the entry reloaded — location, radius, favorite and filter settings are untouched. Until now a rejected key looked exactly like an outage ("ladestellen.at unreachable") and the entities simply stayed unavailable with no way to enter a new key short of deleting the entry.
