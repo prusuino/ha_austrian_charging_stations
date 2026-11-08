@@ -86,5 +86,72 @@
     "abort": {
       "no_options": "Solo le voci per raggio hanno opzioni. I preferiti vengono configurati al momento dell'aggiunta."
     }
+  },
+  "triggers": {
+    "favorite_became_available": {
+      "name": "Stazione preferita diventata disponibile",
+      "description": "Si attiva quando un punto di ricarica o un sito preferito passa a «disponibile» (stato derivato, che tiene conto anche degli orari di apertura).",
+      "fields": {
+        "behavior": {
+          "name": "Attiva quando"
+        },
+        "for": {
+          "name": "Per almeno"
+        }
+      }
+    },
+    "favorite_became_occupied": {
+      "name": "Stazione preferita diventata occupata",
+      "description": "Si attiva quando un punto di ricarica o un sito preferito passa a «occupato».",
+      "fields": {
+        "behavior": {
+          "name": "Attiva quando"
+        },
+        "for": {
+          "name": "Per almeno"
+        }
+      }
+    },
+    "available_count_crossed_threshold": {
+      "name": "Numero di punti liberi ha superato una soglia",
+      "description": "Si attiva quando il numero di punti di ricarica disponibili di una panoramica per raggio, di un tipo di presa o di un sito preferito attraversa la soglia impostata.",
+      "fields": {
+        "behavior": {
+          "name": "Attiva quando"
+        },
+        "for": {
+          "name": "Per almeno"
+        },
+        "threshold": {
+          "name": "Soglia"
+        }
+      }
+    }
+  },
+  "conditions": {
+    "is_favorite_available": {
+      "name": "Stazione preferita è disponibile",
+      "description": "Soddisfatta finché un punto di ricarica o un sito preferito è disponibile.",
+      "fields": {
+        "behavior": {
+          "name": "Condizione soddisfatta se"
+        },
+        "for": {
+          "name": "Per almeno"
+        }
+      }
+    },
+    "is_favorite_occupied": {
+      "name": "Stazione preferita è occupata",
+      "description": "Soddisfatta finché un punto di ricarica o un sito preferito è occupato.",
+      "fields": {
+        "behavior": {
+          "name": "Condizione soddisfatta se"
+        },
+        "for": {
+          "name": "Per almeno"
+        }
+      }
+    }
   }
 }

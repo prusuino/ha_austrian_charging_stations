@@ -1,0 +1,62 @@
+.favorite_target: &favorite_target
+  entity:
+    - integration: ladestellen_at
+      domain: sensor
+
+favorite_became_available:
+  fields:
+    behavior:
+      required: true
+      default: each
+      selector:
+        automation_behavior:
+          mode: trigger
+    for:
+      required: true
+      default: 00:00:00
+      selector:
+        duration:
+  target: *favorite_target
+
+favorite_became_occupied:
+  fields:
+    behavior:
+      required: true
+      default: each
+      selector:
+        automation_behavior:
+          mode: trigger
+    for:
+      required: true
+      default: 00:00:00
+      selector:
+        duration:
+  target: *favorite_target
+
+available_count_crossed_threshold:
+  fields:
+    behavior:
+      required: true
+      default: each
+      selector:
+        automation_behavior:
+          mode: trigger
+    for:
+      required: true
+      default: 00:00:00
+      selector:
+        duration:
+    threshold:
+      required: true
+      selector:
+        numeric_threshold:
+          mode: crossed
+          entity:
+            - domain: input_number
+            - domain: number
+            - domain: sensor
+          number:
+            min: 0
+            step: 1
+            mode: box
+  target: *favorite_target

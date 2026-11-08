@@ -1,0 +1,68 @@
+blueprint:
+  name: Austrian Charging Stations – notify when a favorite station becomes available
+  description: >-
+    Sends a notification to your phone when one of your favorite charging
+    stations (a single charge point or a whole site) becomes available again:
+    name, street and city. It fires once when the status changes to
+    available, not on every refresh while it stays free.
+
+
+    Add your own steps in the action field, for example a text-to-speech
+    announcement; the text is available there as `{{ message }}`.
+  domain: automation
+  source_url: https://github.com/prusuino/ha_austrian_charging_stations/blob/main/blueprints/automation/austrian_charging_station_available.yaml
+  author: prusuino
+  homeassistant:
+    min_version: 2025.4.0
+  input:
+    favorite_sensors:
+      name: Favorite stations
+      description: The status sensor of each favorite charge point, or the available-count sensor of each favorite site.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - integration: ladestellen_at
+              domain: sensor
+    notify_device:
+      name: Phone
+      description: The phone (Home Assistant Companion app) that receives the notification.
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+    extra_actions:
+      name: Additional actions
+      description: Run after the notification. The notification text is available as `{{ message }}`.
+      default: []
+      selector:
+        action:
+
+mode: queued
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input favorite_sensors
+    attribute: site_status
+    to: available
+
+variables:
+  notify_device: !input notify_device
+  station: "{{ trigger.to_state.name }}"
+  street: "{{ trigger.to_state.attributes.street or '' }}"
+  city: "{{ trigger.to_state.attributes.city or '' }}"
+  message: >-
+    {{ station }} is available again{{ (' (' ~ street ~ (', ' if street and city else '') ~ city ~ ')') if street or city else '' }}.
+
+conditions:
+  # A real change to available, not the first value after a start.
+  - condition: template
+    value_template: "{{ trigger.from_state is not none and trigger.from_state.attributes.site_status is defined and trigger.from_state.attributes.site_status != 'available' }}"
+
+actions:
+  - action: "notify.mobile_app_{{ device_attr(notify_device, 'name') | slugify }}"
+    data:
+      title: "Charging station available"
+      message: "{{ message }}"
+  - sequence: !input extra_actions

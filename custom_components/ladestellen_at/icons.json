@@ -1,0 +1,21 @@
+{
+  "triggers": {
+    "favorite_became_available": {
+      "trigger": "mdi:ev-station"
+    },
+    "favorite_became_occupied": {
+      "trigger": "mdi:car-electric"
+    },
+    "available_count_crossed_threshold": {
+      "trigger": "mdi:counter"
+    }
+  },
+  "conditions": {
+    "is_favorite_available": {
+      "condition": "mdi:ev-station"
+    },
+    "is_favorite_occupied": {
+      "condition": "mdi:car-electric"
+    }
+  }
+}

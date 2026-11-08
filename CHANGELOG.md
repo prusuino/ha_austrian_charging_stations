@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.0 — 2026-11-08
+
+- **New: triggers and conditions in the automation editor** (Home Assistant 2026.10 / 2026.11 or newer). Triggers: *Favorite station became available*, *Favorite station became occupied* (both on the derived status of a favorite charge point or site, which also respects opening hours) and *Available count crossed a threshold* (radius overviews, plug-type sensors and favorite sites). Conditions: *Favorite station is available* and *Favorite station is occupied*. In all four languages; on older versions the entries are simply not offered.
+- **New: a blueprint, *notify when a favorite station becomes available*.** One-click import from the README: picks your favorite stations and your phone, and sends name, street and city once when a favorite becomes available again; an action field takes your own steps with the text as `{{ message }}`.
+
 ## 1.5.1 — 2026-11-06
 
 - **Fixed: the diagnostics download could contain private values.** The entry's unique id went out unredacted: depending on the integration it holds the coordinates of the entry or, for a VKF entry of Swiss Hail Protection, the device serial. The text of the last error could also repeat a request URL. The unique id, the entry title and the entry's name and location fields are now redacted, and only the type of the last error is reported. If you have shared a diagnostics file from the previous version, consider it exposed.

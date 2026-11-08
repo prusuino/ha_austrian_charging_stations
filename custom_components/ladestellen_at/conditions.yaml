@@ -1,0 +1,34 @@
+.favorite_target: &favorite_target
+  entity:
+    - integration: ladestellen_at
+      domain: sensor
+
+is_favorite_available:
+  fields:
+    behavior:
+      required: true
+      default: any
+      selector:
+        automation_behavior:
+          mode: condition
+    for:
+      required: true
+      default: 00:00:00
+      selector:
+        duration:
+  target: *favorite_target
+
+is_favorite_occupied:
+  fields:
+    behavior:
+      required: true
+      default: any
+      selector:
+        automation_behavior:
+          mode: condition
+    for:
+      required: true
+      default: 00:00:00
+      selector:
+        duration:
+  target: *favorite_target

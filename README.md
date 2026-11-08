@@ -152,6 +152,50 @@ hidden_badges:  # optional: hide individual header badges (availability / renewa
 
 With a `plug_types` filter, boxes of other plug families are hidden and the availability badge counts only the visible charge points. The filter is purely visual — the favorite and its sensors keep covering the whole site.
 
+## Automations
+
+### Blueprint: notify when a favorite station becomes available
+
+The repository ships a blueprint that sends a notification to your phone when one of your favorite charging stations (a single charge point or a whole site) becomes available again: name, street and city, once when the status changes. Import it once, then create an automation from it:
+
+[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fprusuino%2Fha_austrian_charging_stations%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Faustrian_charging_station_available.yaml)
+
+An action field takes your own steps; the text is available there as `{{ message }}`.
+
+### Triggers and conditions in the automation editor
+
+On Home Assistant 2026.10 or newer the integration adds its own entries to the automation editor's trigger list, on 2026.11 or newer also to the condition list. They target the integration's own sensors (pick an entity, a favorite's device or an area); the usual *for* duration and behaviour options apply.
+
+| Trigger | Fires when |
+|---|---|
+| **Favorite station became available** | the derived status of a favorite charge point or site changes to available (opening hours respected) |
+| **Favorite station became occupied** | the derived status changes to occupied |
+| **Available count crossed a threshold** | the number of available charge points of a radius overview, a plug-type sensor or a favorite site crosses the threshold you set |
+
+| Condition | Passes while |
+|---|---|
+| **Favorite station is available** | a favorite charge point or site is available |
+| **Favorite station is occupied** | a favorite charge point or site is occupied |
+
+```yaml
+triggers:
+  - trigger: ladestellen_at.favorite_became_available
+    target:
+      entity_id: sensor.at_charging_station_favorite_garage_am_hof_7f3a
+  - trigger: ladestellen_at.available_count_crossed_threshold
+    target:
+      entity_id: sensor.at_charging_stations_available_15km_7f3a
+    options:
+      threshold:
+        type: below
+        value:
+          number: 3
+conditions:
+  - condition: ladestellen_at.is_favorite_available
+    target:
+      entity_id: sensor.at_charging_station_favorite_garage_am_hof_7f3a
+```
+
 ## Language
 
 Entity names, the device name, and the dropdown filter values adapt automatically to your Home Assistant language setting — German, English, French, and Italian are supported, with English as the fallback for any other language. Plug family and operator names from the source data are shown as-is.

@@ -86,5 +86,72 @@
     "abort": {
       "no_options": "Only radius entries have options. Favorites are configured when they are added."
     }
+  },
+  "triggers": {
+    "favorite_became_available": {
+      "name": "Favorite station became available",
+      "description": "Triggers when a favorite charge point or site changes to available (derived status, which also respects opening hours).",
+      "fields": {
+        "behavior": {
+          "name": "Trigger when"
+        },
+        "for": {
+          "name": "For at least"
+        }
+      }
+    },
+    "favorite_became_occupied": {
+      "name": "Favorite station became occupied",
+      "description": "Triggers when a favorite charge point or site changes to occupied.",
+      "fields": {
+        "behavior": {
+          "name": "Trigger when"
+        },
+        "for": {
+          "name": "For at least"
+        }
+      }
+    },
+    "available_count_crossed_threshold": {
+      "name": "Available count crossed a threshold",
+      "description": "Triggers when the number of available charge points of a radius overview, a plug type or a favorite site crosses the threshold you set.",
+      "fields": {
+        "behavior": {
+          "name": "Trigger when"
+        },
+        "for": {
+          "name": "For at least"
+        },
+        "threshold": {
+          "name": "Threshold"
+        }
+      }
+    }
+  },
+  "conditions": {
+    "is_favorite_available": {
+      "name": "Favorite station is available",
+      "description": "Passes while a favorite charge point or site is available.",
+      "fields": {
+        "behavior": {
+          "name": "Condition passes when"
+        },
+        "for": {
+          "name": "For at least"
+        }
+      }
+    },
+    "is_favorite_occupied": {
+      "name": "Favorite station is occupied",
+      "description": "Passes while a favorite charge point or site is occupied.",
+      "fields": {
+        "behavior": {
+          "name": "Condition passes when"
+        },
+        "for": {
+          "name": "For at least"
+        }
+      }
+    }
   }
 }

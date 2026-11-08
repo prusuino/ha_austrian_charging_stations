@@ -86,5 +86,72 @@
     "abort": {
       "no_options": "Nur Umkreis-Einträge haben Optionen. Favoriten werden beim Hinzufügen konfiguriert."
     }
+  },
+  "triggers": {
+    "favorite_became_available": {
+      "name": "Favorit ist frei geworden",
+      "description": "Löst aus, wenn ein favorisierter Ladepunkt oder Standort auf „verfügbar“ wechselt (abgeleiteter Status, berücksichtigt auch die Öffnungszeiten).",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen wenn"
+        },
+        "for": {
+          "name": "Mindestens für"
+        }
+      }
+    },
+    "favorite_became_occupied": {
+      "name": "Favorit ist belegt worden",
+      "description": "Löst aus, wenn ein favorisierter Ladepunkt oder Standort auf „belegt“ wechselt.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen wenn"
+        },
+        "for": {
+          "name": "Mindestens für"
+        }
+      }
+    },
+    "available_count_crossed_threshold": {
+      "name": "Anzahl freier Ladepunkte hat Schwellenwert überschritten",
+      "description": "Löst aus, wenn die Anzahl freier Ladepunkte einer Umkreis-Übersicht, eines Steckertyps oder eines favorisierten Standorts den gesetzten Schwellenwert über- oder unterschreitet.",
+      "fields": {
+        "behavior": {
+          "name": "Auslösen wenn"
+        },
+        "for": {
+          "name": "Mindestens für"
+        },
+        "threshold": {
+          "name": "Schwellenwert"
+        }
+      }
+    }
+  },
+  "conditions": {
+    "is_favorite_available": {
+      "name": "Favorit ist frei",
+      "description": "Erfüllt, solange ein favorisierter Ladepunkt oder Standort verfügbar ist.",
+      "fields": {
+        "behavior": {
+          "name": "Bedingung erfüllt wenn"
+        },
+        "for": {
+          "name": "Mindestens für"
+        }
+      }
+    },
+    "is_favorite_occupied": {
+      "name": "Favorit ist belegt",
+      "description": "Erfüllt, solange ein favorisierter Ladepunkt oder Standort belegt ist.",
+      "fields": {
+        "behavior": {
+          "name": "Bedingung erfüllt wenn"
+        },
+        "for": {
+          "name": "Mindestens für"
+        }
+      }
+    }
   }
 }

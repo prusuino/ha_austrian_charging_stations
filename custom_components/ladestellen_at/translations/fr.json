@@ -86,5 +86,72 @@
     "abort": {
       "no_options": "Seules les entrées par rayon ont des options. Les favoris sont configurés lors de leur ajout."
     }
+  },
+  "triggers": {
+    "favorite_became_available": {
+      "name": "Station favorite devenue disponible",
+      "description": "Se déclenche quand un point de charge ou un site favori passe à « disponible » (statut dérivé, qui tient aussi compte des heures d'ouverture).",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher quand"
+        },
+        "for": {
+          "name": "Pendant au moins"
+        }
+      }
+    },
+    "favorite_became_occupied": {
+      "name": "Station favorite devenue occupée",
+      "description": "Se déclenche quand un point de charge ou un site favori passe à « occupé ».",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher quand"
+        },
+        "for": {
+          "name": "Pendant au moins"
+        }
+      }
+    },
+    "available_count_crossed_threshold": {
+      "name": "Nombre de points libres a franchi un seuil",
+      "description": "Se déclenche quand le nombre de points de charge disponibles d'un aperçu par rayon, d'un type de prise ou d'un site favori franchit le seuil fixé.",
+      "fields": {
+        "behavior": {
+          "name": "Déclencher quand"
+        },
+        "for": {
+          "name": "Pendant au moins"
+        },
+        "threshold": {
+          "name": "Seuil"
+        }
+      }
+    }
+  },
+  "conditions": {
+    "is_favorite_available": {
+      "name": "Station favorite est disponible",
+      "description": "Remplie tant qu'un point de charge ou un site favori est disponible.",
+      "fields": {
+        "behavior": {
+          "name": "Condition remplie si"
+        },
+        "for": {
+          "name": "Pendant au moins"
+        }
+      }
+    },
+    "is_favorite_occupied": {
+      "name": "Station favorite est occupée",
+      "description": "Remplie tant qu'un point de charge ou un site favori est occupé.",
+      "fields": {
+        "behavior": {
+          "name": "Condition remplie si"
+        },
+        "for": {
+          "name": "Pendant au moins"
+        }
+      }
+    }
   }
 }
