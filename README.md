@@ -297,6 +297,7 @@ The integration is listed in the Marketplace default catalog (formerly the HACS 
 
 ## Notes
 
+- **Repairs.** When the ladestellen.at service has not answered for three refreshes in a row, or when a favorite charge point or site is no longer in its data, a notice appears under **Settings → Repairs** that says what happened and what to do; it disappears on its own once the data is back.
 - Only relevant for locations in or near Austria.
 - Data quality/freshness varies by charging network operator — some feeds update within minutes, others less frequently. This reflects the operators' own reporting, not a limitation of this integration.
 - This integration is unofficial and not affiliated with, endorsed by, or supported by E-Control or ladestellen.at. It only reads the directory's published data via the official public API.

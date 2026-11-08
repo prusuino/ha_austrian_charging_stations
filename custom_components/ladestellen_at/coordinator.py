@@ -27,6 +27,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from .issues import IssueReporter
 from .const import (
     API_BASE,
     API_REFERER,
@@ -519,6 +520,7 @@ class LadestellenAtCoordinator(DataUpdateCoordinator[dict]):
             update_interval=timedelta(minutes=UPDATE_INTERVAL_MINUTES),
         )
         self._entry = entry
+        self.issues = IssueReporter(hass, entry.entry_id)
 
     async def _async_update_data(self) -> dict:
         data = self._entry.data
@@ -531,7 +533,13 @@ class LadestellenAtCoordinator(DataUpdateCoordinator[dict]):
                 data[CONF_RADIUS_KM],
             )
         except Exception as err:
-            raise _refresh_error(err) from err
+            exc = _refresh_error(err)
+            if isinstance(exc, UpdateFailed):
+                # Auth failures start the reauth flow instead; only a service
+                # that does not answer counts towards the repair notice.
+                self.issues.failure("unreachable", {"host": "ladestellen.at"})
+            raise exc from err
+        self.issues.clear("unreachable")
 
         options = self._entry.options
         filtered = apply_filters(
@@ -593,15 +601,24 @@ class FavoriteStationCoordinator(DataUpdateCoordinator[dict]):
             update_interval=timedelta(minutes=UPDATE_INTERVAL_MINUTES),
         )
         self._entry = entry
+        self.issues = IssueReporter(hass, entry.entry_id)
 
     async def _async_update_data(self) -> dict:
         evse_id = self._entry.data[CONF_STATION_ID]
         try:
             station = await async_fetch_station_by_id(self.hass, _entry_api_key(self._entry), evse_id)
         except Exception as err:
-            raise _refresh_error(err) from err
+            exc = _refresh_error(err)
+            if isinstance(exc, UpdateFailed):
+                # Auth failures start the reauth flow instead; only a service
+                # that does not answer counts towards the repair notice.
+                self.issues.failure("unreachable", {"host": "ladestellen.at"})
+            raise exc from err
+        self.issues.clear("unreachable")
         if station is None:
+            self.issues.raise_now("favorite_missing", {"station": evse_id})
             raise UpdateFailed(f"Charge point {evse_id} no longer found in ladestellen.at data")
+        self.issues.clear("favorite_missing")
         return station
 
 
@@ -618,14 +635,23 @@ class FavoriteLocationCoordinator(DataUpdateCoordinator[dict]):
             update_interval=timedelta(minutes=UPDATE_INTERVAL_MINUTES),
         )
         self._entry = entry
+        self.issues = IssueReporter(hass, entry.entry_id)
 
     async def _async_update_data(self) -> dict:
         location_id = self._entry.data[CONF_STATION_LOCATION_ID]
         try:
             connectors = await async_fetch_station_location(self.hass, _entry_api_key(self._entry), location_id)
         except Exception as err:
-            raise _refresh_error(err) from err
+            exc = _refresh_error(err)
+            if isinstance(exc, UpdateFailed):
+                # Auth failures start the reauth flow instead; only a service
+                # that does not answer counts towards the repair notice.
+                self.issues.failure("unreachable", {"host": "ladestellen.at"})
+            raise exc from err
+        self.issues.clear("unreachable")
         if not connectors:
+            self.issues.raise_now("favorite_missing", {"station": location_id})
             raise UpdateFailed(f"Site {location_id} no longer has any charge points in ladestellen.at data")
+        self.issues.clear("favorite_missing")
         groups = group_by_location(connectors)
         return groups.get(location_id) or max(groups.values(), key=lambda g: len(g["connectors"]))

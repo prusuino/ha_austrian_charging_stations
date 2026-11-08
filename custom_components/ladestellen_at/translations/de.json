@@ -154,5 +154,15 @@
         }
       }
     }
+  },
+  "issues": {
+    "unreachable": {
+      "title": "Austrian Charging Stations: Datendienst nicht erreichbar",
+      "description": "Der Dienst unter {host} hat mehrere Aktualisierungen in Folge nicht beantwortet. Prüfe deine Internetverbindung; ist sie in Ordnung, ist der Dienst selbst gestört. Die Entitäten bleiben bis dahin nicht verfügbar und erholen sich von selbst; dieser Hinweis verschwindet mit der nächsten erfolgreichen Aktualisierung."
+    },
+    "favorite_missing": {
+      "title": "Austrian Charging Stations: Favorit nicht mehr gelistet",
+      "description": "Der Favorit {station} ist nicht mehr in den Daten des Ladestationen-Verzeichnisses. Der Ladepunkt oder Standort wurde möglicherweise entfernt oder umnummeriert. Seine Entitäten bleiben nicht verfügbar. Wähle über „Neu konfigurieren“ im Menü des Eintrags einen anderen oder entferne den Eintrag; dieser Hinweis verschwindet, sobald der Favorit wieder gelistet ist."
+    }
   }
 }

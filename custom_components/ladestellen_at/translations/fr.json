@@ -154,5 +154,15 @@
         }
       }
     }
+  },
+  "issues": {
+    "unreachable": {
+      "title": "Austrian Charging Stations : service de données injoignable",
+      "description": "Le service à l'adresse {host} n'a pas répondu lors de plusieurs actualisations consécutives. Vérifie ta connexion internet ; si elle fonctionne, le service lui-même est en panne. Les entités restent indisponibles jusque-là et se rétablissent d'elles-mêmes ; cet avis disparaît à la prochaine actualisation réussie."
+    },
+    "favorite_missing": {
+      "title": "Austrian Charging Stations : favori plus répertorié",
+      "description": "Le favori {station} ne figure plus dans les données du registre des stations de recharge. Le point de charge ou le site a peut-être été retiré ou renuméroté. Ses entités restent indisponibles. Choisis-en un autre via « Reconfigurer » dans le menu de l'entrée, ou supprime l'entrée ; cet avis disparaît dès que le favori est de nouveau répertorié."
+    }
   }
 }

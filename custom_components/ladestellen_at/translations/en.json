@@ -154,5 +154,15 @@
         }
       }
     }
+  },
+  "issues": {
+    "unreachable": {
+      "title": "Austrian Charging Stations: data service unreachable",
+      "description": "The service at {host} has not answered for several refreshes in a row. Check your internet connection; if it is fine, the service itself is down. The entities stay unavailable until then and recover on their own; this notice disappears with the next successful refresh."
+    },
+    "favorite_missing": {
+      "title": "Austrian Charging Stations: favorite no longer listed",
+      "description": "The favorite {station} is no longer in the data of the charging-station registry. The charge point or site may have been removed or renumbered. Its entities stay unavailable. Pick another one with Reconfigure in the entry's menu, or remove the entry; this notice disappears when the favorite is listed again."
+    }
   }
 }

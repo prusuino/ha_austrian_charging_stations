@@ -154,5 +154,15 @@
         }
       }
     }
+  },
+  "issues": {
+    "unreachable": {
+      "title": "Austrian Charging Stations: servizio dati non raggiungibile",
+      "description": "Il servizio all'indirizzo {host} non ha risposto per diversi aggiornamenti consecutivi. Controlla la connessione internet; se funziona, è il servizio stesso a essere guasto. Le entità restano non disponibili fino ad allora e si ripristinano da sole; questo avviso scompare con il prossimo aggiornamento riuscito."
+    },
+    "favorite_missing": {
+      "title": "Austrian Charging Stations: preferito non più elencato",
+      "description": "Il preferito {station} non è più nei dati del registro delle stazioni di ricarica. Il punto di ricarica o il sito potrebbe essere stato rimosso o rinumerato. Le sue entità restano non disponibili. Scegline un altro con «Riconfigura» nel menu della voce, oppure rimuovi la voce; questo avviso scompare appena il preferito è di nuovo elencato."
+    }
   }
 }

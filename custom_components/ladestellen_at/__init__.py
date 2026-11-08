@@ -7,6 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import CONF_ENTRY_TYPE, DOMAIN, ENTRY_TYPE_FAVORITE, ENTRY_TYPE_FAVORITE_LOCATION
+from .issues import async_clear_entry_issues
 from .coordinator import FavoriteLocationCoordinator, FavoriteStationCoordinator, LadestellenAtCoordinator
 from .frontend import async_serve_card
 
@@ -59,5 +60,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     platforms = PLATFORMS_RADIUS if _is_radius(entry) else PLATFORMS_FAVORITE
     unloaded = await hass.config_entries.async_unload_platforms(entry, platforms)
     if unloaded:
+        async_clear_entry_issues(hass, entry.entry_id)
         hass.data[DOMAIN].pop(entry.entry_id)
     return unloaded
