@@ -64,7 +64,8 @@
     },
     "abort": {
       "already_configured": "This location/radius or charge point is already configured.",
-      "reauth_successful": "The API key was updated and the entry reloaded."
+      "reauth_successful": "The API key was updated and the entry reloaded.",
+      "reconfigure_successful": "The entry was updated and the integration reloaded."
     },
     "error": {
       "cannot_connect": "ladestellen.at could not be reached.",

@@ -293,6 +293,8 @@ The integration is listed in the Marketplace default catalog (formerly the HACS 
 
 5. Optional: register the [bundled card](#adding-the-card-as-a-resource) as a resource and set up the [dashboard](#dashboard). The integration works fully without it — this only saves you building the cards yourself.
 
+**Changing an entry later.** Open the entry's menu (⋮) under **Settings → Devices & Services** and choose **Reconfigure**: a radius overview takes a new location or radius, a favorite runs the station search again so you can pick another charge point or site. The entry keeps its id and your options; entities are kept where the selection stays and recreated where it changes.
+
 ## Notes
 
 - Only relevant for locations in or near Austria.

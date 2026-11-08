@@ -64,7 +64,8 @@
     },
     "abort": {
       "already_configured": "Cette combinaison emplacement/rayon ou ce point de charge est déjà configuré.",
-      "reauth_successful": "La clé API a été mise à jour et l'entrée rechargée."
+      "reauth_successful": "La clé API a été mise à jour et l'entrée rechargée.",
+      "reconfigure_successful": "L'entrée a été mise à jour et l'intégration rechargée."
     },
     "error": {
       "cannot_connect": "ladestellen.at n'a pas pu être atteint.",

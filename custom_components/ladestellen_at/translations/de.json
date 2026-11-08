@@ -64,7 +64,8 @@
     },
     "abort": {
       "already_configured": "Diese Standort-/Umkreis-Kombination oder dieser Ladepunkt ist bereits konfiguriert.",
-      "reauth_successful": "Der API-Key wurde aktualisiert und der Eintrag neu geladen."
+      "reauth_successful": "Der API-Key wurde aktualisiert und der Eintrag neu geladen.",
+      "reconfigure_successful": "Der Eintrag wurde aktualisiert und die Integration neu geladen."
     },
     "error": {
       "cannot_connect": "ladestellen.at konnte nicht erreicht werden.",

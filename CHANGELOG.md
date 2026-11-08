@@ -2,6 +2,7 @@
 
 ## 1.6.0 — 2026-11-08
 
+- **New: reconfigure an entry in place.** The entry's menu under **Settings → Devices & services** now offers *Reconfigure*, which runs the same steps as the setup: a new location or radius for an overview, another charge point or site for a favorite. The entry keeps its id and the user's options; entities of a selection that stays keep their ids and history, entities of one that is replaced are recreated. A change that would duplicate another entry is refused.
 - **New: triggers and conditions in the automation editor** (Home Assistant 2026.10 / 2026.11 or newer). Triggers: *Favorite station became available*, *Favorite station became occupied* (both on the derived status of a favorite charge point or site, which also respects opening hours) and *Available count crossed a threshold* (radius overviews, plug-type sensors and favorite sites). Conditions: *Favorite station is available* and *Favorite station is occupied*. In all four languages; on older versions the entries are simply not offered.
 - **New: a blueprint, *notify when a favorite station becomes available*.** One-click import from the README: picks your favorite stations and your phone, and sends name, street and city once when a favorite becomes available again; an action field takes your own steps with the text as `{{ message }}`.
 

@@ -64,7 +64,8 @@
     },
     "abort": {
       "already_configured": "Questa combinazione di posizione/raggio o questo punto di ricarica è già configurato.",
-      "reauth_successful": "La chiave API è stata aggiornata e la voce ricaricata."
+      "reauth_successful": "La chiave API è stata aggiornata e la voce ricaricata.",
+      "reconfigure_successful": "La voce è stata aggiornata e l'integrazione ricaricata."
     },
     "error": {
       "cannot_connect": "Impossibile raggiungere ladestellen.at.",
