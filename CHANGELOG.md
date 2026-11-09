@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.2 — 2026-11-09
+
+- **Card hardening.** The escaping helper also escapes quotes and the status lookups match own table keys only; attribute values are never trusted. Follow-up to the HACS review of Swiss Lottery by @frenck.
+
 ## 1.7.1 — 2026-11-09
 
 - **Version on the service card.** The integration's version now appears on its service card under Settings → Devices & services, where the entities are listed.
