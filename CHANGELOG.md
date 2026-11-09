@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.0 — 2026-11-09
+
+- **Quality scale Bronze.** The integration keeps its coordinator in the config entry's runtime data, the README gained removal instructions and a quality-scale section, and the manifest declares the **bronze** tier. A test suite (charge point parsing, plug families, opening hours, site grouping and status, filters, config flow with radius, favorite by EvseID, nearby pick, rejected API key, duplicate, reauthentication and reconfigure) runs on every push. No change to entities or configuration.
+
 ## 1.6.0 — 2026-11-08
 
 - **New: repair notices.** A notice under **Settings → Repairs** when the ladestellen.at service has not answered for three refreshes in a row (it clears itself with the next successful refresh), and when a favorite charge point or site is no longer in its data, with a pointer to *Reconfigure*. In all four languages.

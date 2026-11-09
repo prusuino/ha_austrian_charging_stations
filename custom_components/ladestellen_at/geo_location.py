@@ -83,7 +83,7 @@ def _migrate_marker_registry(registry: er.EntityRegistry, entry_id: str) -> None
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    coordinator: LadestellenAtCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: LadestellenAtCoordinator = entry.runtime_data
     known_entities: dict[str, ChargingSiteEvent] = {}
 
     # Before the first marker is added, so nothing gets registered twice.

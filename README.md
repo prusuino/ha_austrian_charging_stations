@@ -295,6 +295,16 @@ The integration is listed in the Marketplace default catalog (formerly the HACS 
 
 **Changing an entry later.** Open the entry's menu (⋮) under **Settings → Devices & Services** and choose **Reconfigure**: a radius overview takes a new location or radius, a favorite runs the station search again so you can pick another charge point or site. The entry keeps its id and your options; entities are kept where the selection stays and recreated where it changes.
 
+## Removal
+
+1. **Settings → Devices & services → Austrian Charging Stations**, open the entry's menu (⋮) and choose **Delete**; repeat for every radius overview and favorite. The entities, their history, the map markers and the device go with the entry; the API key is stored only in the entry and vanishes with it.
+2. If you registered the bundled card as a dashboard resource, remove it under **Settings → Dashboards → Resources** and delete the dashboard built with it.
+3. Remove the integration itself in the **Marketplace** (or HACS), then restart Home Assistant. With a manual installation, delete `custom_components/ladestellen_at` instead. Your API key at ladestellen.at is not affected.
+
+## Quality scale
+
+The integration declares **Bronze** on the [Home Assistant integration quality scale](https://developers.home-assistant.io/docs/core/integration-quality-scale/): a config flow with tests, unique ids for every entity, brand images, installation and removal instructions, a connection check before an entry is created, no duplicate entries, runtime data on the config entry, and the other Bronze rules. The tier is self-assessed, as it is for every custom integration; the per-rule status, including what is still open for Silver and Gold, is in `custom_components/ladestellen_at/quality_scale.yaml`.
+
 ## Notes
 
 - **Repairs.** When the ladestellen.at service has not answered for three refreshes in a row, or when a favorite charge point or site is no longer in its data, a notice appears under **Settings → Repairs** that says what happened and what to do; it disappears on its own once the data is back.

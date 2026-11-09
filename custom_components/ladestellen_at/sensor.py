@@ -81,7 +81,7 @@ async def async_setup_entry(
     entry_type = entry.data.get(CONF_ENTRY_TYPE)
 
     if entry_type == ENTRY_TYPE_FAVORITE:
-        coordinator: FavoriteStationCoordinator = hass.data[DOMAIN][entry.entry_id]
+        coordinator: FavoriteStationCoordinator = entry.runtime_data
         status_sensor = FavoriteStationSensor(hass, coordinator, entry)
         power_sensor = FavoriteStationPowerSensor(hass, coordinator, entry)
         price_sensor = FavoriteStationPriceSensor(hass, coordinator, entry)
@@ -93,7 +93,7 @@ async def async_setup_entry(
         return
 
     if entry_type == ENTRY_TYPE_FAVORITE_LOCATION:
-        location_coordinator: FavoriteLocationCoordinator = hass.data[DOMAIN][entry.entry_id]
+        location_coordinator: FavoriteLocationCoordinator = entry.runtime_data
         site_name = _favorite_location_name(entry, location_coordinator.data or {})
         # Object-id stem shared by every sensor of this site. The entry
         # suffix keeps two favorite sites of the same name apart (see
@@ -171,7 +171,7 @@ async def async_setup_entry(
         _sync_connector_entities()
         return
 
-    coordinator: LadestellenAtCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: LadestellenAtCoordinator = entry.runtime_data
     async_add_entities([ChargingStationsFreeSensor(hass, coordinator, entry)])
 
     # Dedicated per-plug-type available-count sensors, chosen in the

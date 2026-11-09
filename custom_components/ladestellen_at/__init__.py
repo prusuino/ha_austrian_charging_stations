@@ -9,6 +9,8 @@ from homeassistant.core import HomeAssistant
 from .const import CONF_ENTRY_TYPE, DOMAIN, ENTRY_TYPE_FAVORITE, ENTRY_TYPE_FAVORITE_LOCATION
 from .issues import async_clear_entry_issues
 from .coordinator import FavoriteLocationCoordinator, FavoriteStationCoordinator, LadestellenAtCoordinator
+
+type LadestellenAtConfigEntry = ConfigEntry[LadestellenAtCoordinator | FavoriteStationCoordinator | FavoriteLocationCoordinator]
 from .frontend import async_serve_card
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,7 +23,7 @@ def _is_radius(entry: ConfigEntry) -> bool:
     return entry.data.get(CONF_ENTRY_TYPE, "radius") == "radius"
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: LadestellenAtConfigEntry) -> bool:
     try:
         await async_serve_card(hass)
     except Exception:  # noqa: BLE001 - serving the card must never block integration setup
@@ -37,7 +39,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await coordinator.async_config_entry_first_refresh()
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    entry.runtime_data = coordinator
     is_radius = _is_radius(entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS_RADIUS if is_radius else PLATFORMS_FAVORITE)
 
@@ -51,15 +53,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def _async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    coordinator: LadestellenAtCoordinator = hass.data[DOMAIN][entry.entry_id]
-    await coordinator.async_request_refresh()
+async def _async_options_updated(hass: HomeAssistant, entry: LadestellenAtConfigEntry) -> None:
+    await entry.runtime_data.async_request_refresh()
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: LadestellenAtConfigEntry) -> bool:
     platforms = PLATFORMS_RADIUS if _is_radius(entry) else PLATFORMS_FAVORITE
     unloaded = await hass.config_entries.async_unload_platforms(entry, platforms)
     if unloaded:
         async_clear_entry_issues(hass, entry.entry_id)
-        hass.data[DOMAIN].pop(entry.entry_id)
     return unloaded
