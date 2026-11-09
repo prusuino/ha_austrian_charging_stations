@@ -11,6 +11,7 @@ from .const import (
     DOMAIN,
     ENTRY_TYPE_FAVORITE,
     ENTRY_TYPE_FAVORITE_LOCATION,
+    VERSION,
 )
 from .localization import t
 
@@ -44,6 +45,7 @@ def device_info(hass: HomeAssistant, entry: ConfigEntry) -> DeviceInfo:
         model = "Charging infrastructure data (WFS)"
     return DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
+        sw_version=VERSION,
         name=name,
         manufacturer="ladestellen.at (E-Control Austria)",
         model=model,
