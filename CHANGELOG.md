@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.3 — 2026-11-10
+
+- **New icon and logo.** The integration has a new icon and a new logo, now with a variant for the dark theme. They appear under Settings → Devices & services and in the Marketplace. The README gained a header image.
+
 ## 1.7.2 — 2026-11-09
 
 - **Card hardening.** The escaping helper also escapes quotes and the status lookups match own table keys only; attribute values are never trusted. Follow-up to the HACS review of Swiss Lottery by @frenck.

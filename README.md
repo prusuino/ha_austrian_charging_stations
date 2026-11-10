@@ -4,6 +4,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 <a href="https://www.buymeacoffee.com/prusuino"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="20"></a>
 
+![Austrian Charging Stations](readme_header.png)
+
 A Home Assistant custom integration that shows real-time availability of public EV charging stations in Austria, sourced from the official national charging point directory **ladestellen.at** (E-Control).
 
 ## Background
