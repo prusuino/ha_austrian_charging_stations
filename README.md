@@ -8,6 +8,18 @@
 
 A Home Assistant custom integration that shows real-time availability of public EV charging stations in Austria, sourced from the official national charging point directory **ladestellen.at** (E-Control).
 
+## Highlights
+
+- **About 39,000 charge points with live status and prices**: from ladestellen.at, E-Control's national directory, to which operators have to report status and ad-hoc price by law; refreshed every 5 minutes.
+- **Three ways to use it**: a radius overview with map markers and an available count, a favorite station, or a favorite site with a sensor for every connector.
+- **Filters that apply at once**: minimum power, plug type, status and operator are entities — change them on the dashboard, no reconfiguring; plugs are normalized to eight families.
+- **Prices as numbers**: the ad-hoc price in ct/kWh as a sensor.
+- **A card for your charger**: the bundled `austrian-charging-stations-card` with a visual editor.
+- **Built for the automation editor**: triggers (favorite became available, favorite became occupied, available count crossed a threshold), conditions (favorite is available / occupied) and a blueprint that tells you when your favorite is free — no templates needed.
+- **A dashboard without building one**: the bundled strategy lays out map and stations by itself.
+- **Free personal API key**: registered once at ladestellen.at; should the key be rejected later, Home Assistant asks for a new one and everything else stays.
+- **Set up in a minute**: starts from your Home Assistant location; German, English, French and Italian; diagnostics download with key and coordinates redacted.
+
 ## Background
 
 ladestellen.at is Austria's national charging point directory (Ladestellenverzeichnis), operated by the regulator E-Control. Operators of publicly accessible charging points are legally required to report their stations there — including the **real-time status (available / charging / out of order) of every charge point** — so the directory covers the entire Austrian public charging network (~39,000 charge points) with live data, plus ad-hoc prices per kWh. This integration offers three independent ways to use that data, chosen when you add the integration:
