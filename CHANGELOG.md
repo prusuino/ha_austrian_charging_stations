@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.4 — 2026-11-19
+
+- The Home Assistant Marketplace lists the integration under *Energy → EV charging* and *Vehicles & transport → Cars & EVs*. The repository is marked as made for Austria. Nothing changes in how the integration works.
+
 ## 1.7.3 — 2026-11-10
 
 - **New icon and logo.** The integration has a new icon and a new logo, now with a variant for the dark theme. They appear under Settings → Devices & services and in the Marketplace. The README gained a header image.

@@ -1,6 +1,7 @@
 {
   "domain": "ladestellen_at",
   "name": "Austrian Charging Stations (ladestellen.at)",
+  "categories": ["energy.ev_charging", "vehicles_transport.cars_evs"],
   "codeowners": [
     "@prusuino"
   ],
@@ -14,5 +15,5 @@
   "issue_tracker": "https://github.com/prusuino/ha_austrian_charging_stations/issues",
   "quality_scale": "bronze",
   "requirements": [],
-  "version": "1.7.3"
+  "version": "1.7.4"
 }
