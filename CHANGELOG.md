@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.5 — 2026-11-23
+
+- **Fixed: a favorite that changed during an outage did not fire the triggers.** While the status cannot be read the favorite's sensors are unavailable, and Home Assistant ignores every change out of "unavailable". A charge point that was occupied before the outage and available after it did not fire *Favorite became available* (and the other way round for *occupied*). Both triggers now compare with the status before the outage; a favorite that comes back unchanged does not fire.
+- Tests for the triggers with real automations.
+
 ## 1.7.4 — 2026-11-19
 
 - The Home Assistant Marketplace lists the integration under *Energy → EV charging* and *Vehicles & transport → Cars & EVs*. The repository is marked as made for Austria. Nothing changes in how the integration works.

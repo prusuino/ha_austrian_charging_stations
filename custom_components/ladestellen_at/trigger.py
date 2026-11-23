@@ -14,6 +14,7 @@ version the module still imports, but offers no triggers.
 from __future__ import annotations
 
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
@@ -50,14 +51,66 @@ else:
                 kept.add(entity_id)
         return kept
 
-    class _FavoriteBecameAvailable(make_entity_target_state_trigger(SITE_STATUS_SPECS, "available")):
-        """A favorite charge point or site becomes available."""
+    _GAP = (STATE_UNAVAILABLE, STATE_UNKNOWN)
+
+    class _AcrossGaps:
+        """Lets a target-state trigger see a change that follows a gap.
+
+        The core skips every change out of "unavailable" or "unknown". While
+        the source cannot be reached the entities are unavailable, so
+        whatever began during the outage would switch an entity from
+        unavailable straight to its new state, and the core would not fire.
+        Such a change is let through here and judged against the last state
+        seen before the gap (the tracked value, which can be an attribute): it
+        fires when that value was not already the
+        target. With nothing known from before the gap, a trigger that
+        announces something (`_fire_without_history`) fires, the others
+        stay quiet. The core asks is_valid_state for every state with a
+        value and only then is_valid_transition, so the states are
+        remembered there.
+        """
+
+        _excluded_from_states = frozenset()
+        _fire_without_history = False
+
+        def __init__(self, hass: HomeAssistant, config) -> None:
+            super().__init__(hass, config)
+            self._last_state: dict[str, str] = {}
+            self._previous_state: dict[str, str | None] = {}
+
+        def entity_filter(self, entities: set[str]) -> set[str]:
+            # Start from what the entities show now, so that a gap right
+            # after the automation starts is judged against a known state.
+            kept = super().entity_filter(entities)
+            for entity_id in kept:
+                state = self._hass.states.get(entity_id)
+                if entity_id not in self._last_state and state is not None and state.state not in _GAP:
+                    self._last_state[entity_id] = self._get_tracked_value(state)
+            return kept
+
+        def is_valid_state(self, state, report_not_triggered) -> bool:
+            self._previous_state[state.entity_id] = self._last_state.get(state.entity_id)
+            self._last_state[state.entity_id] = self._get_tracked_value(state)
+            return super().is_valid_state(state, report_not_triggered)
+
+        def is_valid_transition(self, from_state, to_state) -> bool:
+            if from_state.state not in _GAP:
+                return super().is_valid_transition(from_state, to_state)
+            before = self._previous_state.get(to_state.entity_id)
+            if before is None:
+                return self._fire_without_history
+            return before not in self._to_states
+
+    class _FavoriteBecameAvailable(_AcrossGaps, make_entity_target_state_trigger(SITE_STATUS_SPECS, "available")):
+        """A favorite charge point or site becomes available; after an outage
+        when it was not available before it."""
 
         def entity_filter(self, entities: set[str]) -> set[str]:
             return _own_entities(self._hass, super().entity_filter(entities), ("_status", "_available"))
 
-    class _FavoriteBecameOccupied(make_entity_target_state_trigger(SITE_STATUS_SPECS, "occupied")):
-        """A favorite charge point or site becomes occupied."""
+    class _FavoriteBecameOccupied(_AcrossGaps, make_entity_target_state_trigger(SITE_STATUS_SPECS, "occupied")):
+        """A favorite charge point or site becomes occupied; after an outage
+        when it was not occupied before it."""
 
         def entity_filter(self, entities: set[str]) -> set[str]:
             return _own_entities(self._hass, super().entity_filter(entities), ("_status", "_available"))
