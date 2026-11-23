@@ -191,6 +191,8 @@ On Home Assistant 2026.10 or newer the integration adds its own entries to the a
 | **Favorite station became occupied** | the derived status changes to occupied |
 | **Available count crossed a threshold** | the number of available charge points of a radius overview, a plug-type sensor or a favorite site crosses the threshold you set |
 
+**After an outage.** Home Assistant ignores a change that comes out of "unavailable", which is what an entity shows while the status of the charge points cannot be reached. These triggers compare with the state before the outage instead: what began in the meantime still fires, and what was already there does not fire a second time; a favorite that comes back unchanged stays quiet.
+
 | Condition | Passes while |
 |---|---|
 | **Favorite station is available** | a favorite charge point or site is available |
