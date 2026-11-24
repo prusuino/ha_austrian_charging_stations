@@ -7,6 +7,7 @@
 [![Tests](https://github.com/prusuino/ha_austrian_charging_stations/actions/workflows/tests.yml/badge.svg)](https://github.com/prusuino/ha_austrian_charging_stations/actions/workflows/tests.yml)
 [![Home Assistant](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fprusuino%2Fha_austrian_charging_stations%2Fmain%2Fhacs.json&query=%24.homeassistant&label=Home%20Assistant&suffix=%2B&color=41BDF5)](https://www.home-assistant.io/)
 [![Quality scale](https://img.shields.io/badge/Quality%20Scale-Bronze-cd7f32.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/)
+[![Downloads](https://img.shields.io/github/downloads/prusuino/ha_austrian_charging_stations/total?label=Downloads&color=brightgreen)](https://github.com/prusuino/ha_austrian_charging_stations/releases)
 <a href="https://www.buymeacoffee.com/prusuino"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="20"></a>
 
 ![Austrian Charging Stations](readme_header.png)
