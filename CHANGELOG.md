@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.6 — 2026-11-24
+
+- **Diagnostics without distances.** The diagnostics download no longer contains distances: the state of the map markers (their distance from the home zone), distance sensors and every distance field are redacted, like the coordinates already were. The points they lead to are public, so a handful of distances was enough to work out where they were measured from. If you posted a diagnostics file publicly, consider removing it.
+
 ## 1.7.5 — 2026-11-23
 
 - **Fixed: a favorite that changed during an outage did not fire the triggers.** While the status cannot be read the favorite's sensors are unavailable, and Home Assistant ignores every change out of "unavailable". A charge point that was occupied before the outage and available after it did not fire *Favorite became available* (and the other way round for *occupied*). Both triggers now compare with the status before the outage; a favorite that comes back unchanged does not fire.

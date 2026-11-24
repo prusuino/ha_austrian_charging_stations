@@ -334,7 +334,7 @@ The integration declares **Bronze** on the [Home Assistant integration quality s
 - Data quality/freshness varies by charging network operator — some feeds update within minutes, others less frequently. This reflects the operators' own reporting, not a limitation of this integration.
 - This integration is unofficial and not affiliated with, endorsed by, or supported by E-Control or ladestellen.at. It only reads the directory's published data via the official public API.
 - If the source API is unreachable, the sensors and map markers become unavailable instead of showing stale data.
-- **Download diagnostics** (entry menu under **Settings → Devices & services**) gives the entry's configuration, what the integration last fetched and the current state of its entities, with coordinates, credentials and the entry's title and unique id redacted. Entity ids and names stay readable and can contain a place or stop name, so look through the file before attaching it to a public issue.
+- **Download diagnostics** (entry menu under **Settings → Devices & services**) gives the entry's configuration, what the integration last fetched and the current state of its entities, with coordinates, distances, credentials and the entry's title and unique id redacted. Entity ids and names stay readable and can contain a place or stop name, so look through the file before attaching it to a public issue.
 
 ## Data source & license
 
